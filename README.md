@@ -1,7 +1,7 @@
 # NGRN
 
 ## Development logs (for internal communication/documentation only)
-- May 24 (from Hongjie): I set up our NGRN Rshiny using CAMO as a template, so I would recommend everyone first download and run the CAMO on your own computer to get a sense of how it works. After you get CAMO running, try to download and run our current version NGRN GUI (I pretty much only change the welcome page as of now). Next, we can all contribute, make changes accordingly and remove unnecessary parts. 
+- May 24 (from Hongjie): I set up our NGRN Rshiny using CAMO as a template, so I would recommend everyone first download and run the CAMO on your own computer to get a sense of how it works. After you get CAMO running, try to download and run our current version NGRN Rshiny (I pretty much only change the welcome page as of now). Next, we can all contribute, make changes accordingly and remove unnecessary parts. 
 
 ## Below is the instruction for installing and running CAMO
 #### Install the Shiny software
