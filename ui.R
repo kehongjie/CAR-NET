@@ -1,4 +1,7 @@
 installed <- installed.packages()[,"Package"]
+
+## test
+
 #enabled <- c()
 #for (toolset in TOOLSET.all) {
 #  if (toolset %in% installed) {
