@@ -1,7 +1,8 @@
 # NGRN
 
 ## Development logs (for internal communication/documentation only)
-- May 24 (from Hongjie): I set up our NGRN Rshiny using CAMO as a template, so I would recommend everyone first download and run the CAMO on your own computer to get a sense of how it works. After you get CAMO running, try to download and run our current version NGRN Rshiny (I pretty much only change the welcome page as of now). Next, we can all contribute, make changes accordingly and remove unnecessary parts. 
+- May 24 (from Hongjie): I set up our NGRN Rshiny using CAMO as a template, so I would recommend everyone first download and run the CAMO on your own computer to get a sense of how it works. After you get CAMO running, try to download and run our current version NGRN Rshiny (I pretty much only change the welcome page as of now). Next, we can all contribute, make changes accordingly and remove unnecessary parts.
+- June 19 (from Eric): I created a preliminary page for the data uploading/preprocessing with the options to change the ID/name of each ncRNA and gene based on a reference data set provided by Zhangchi, and to adjust the filter cutoff for the averages of each column. Test and reference data sets are uploaded under the data folder.
 
 ## Below is the instruction for installing and running CAMO
 #### Install the Shiny software
