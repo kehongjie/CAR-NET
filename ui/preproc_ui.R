@@ -8,52 +8,51 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ##########################
         # Upload Data 
         ##########################
-        h2("Upload data"),
-        #### chose species
-        selectInput(ns('select_species'), 'Select a species', 
-                    c("homo sapiens (hs)"="hs","mus musculus (mm)"="mm",
-                      "rattus norvegicus (rn)"="rn","caenorhabditis elegans (ce)"="ce",
-                      "drosophila melanogaster (dm)"="dm","other"="other")),
-        uiOutput(ns("other_species")),
+        h2("Upload Data"),
         # textInput(ns("species"), label="Species name:", value = "", width = NULL,
         #           placeholder = NULL),
         # radioButtons(ns("species"), label = "Chose species",
         #         choices = list("human" = "human", "mouse" = "mouse"),
         #         selected = "human"),
         #### chose input data type
-        radioButtons(ns("inputType"), label = "Input data type",
-                choices = list("Pre-calculated p-value and log fold change (logFC) from gene-level differential expression analysis" = 1, 
-                               "Preprocessed gene expression data" = 2),
-                selected = 2),
-
-        #### if input data are p-values
-        conditionalPanel(
-          condition = paste0("input['", ns("inputType"), "'] == '1' "),
-          fileInput(ns("pvalfile"), 'Upload p-value and logFC file (.csv)',
-            accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv'))
-          ),
-
-        #### if input data are raw data perform single DE first
-        conditionalPanel(
-          condition = paste0("input['", ns("inputType"), "'] == '2' "),
-          fileInput(ns("exprfile"), 'Upload gene expression data file (.csv)',
-            accept=c('text/csv', 'text/comma-separated-values,text/plain', 
-              '.csv')
-          ),
-
-          fileInput(ns("clinical"), 'Upload clinical file (.csv)',
-            accept=c('text/csv', 'text/comma-separated-values,text/plain', 
-              '.csv')
-          ),
-          uiOutput(ns('caseName')),
-          radioButtons(ns("dtype"), label = "Differential analysis method",
-                       choices = list("LIMMA (for microarray intensities  / log2-transformed RNA-Seq normalized counts)" = "microarray", 
-                                      "DEseq2 (for RNA-Seq counts)" = "RNAseq"),
-                       selected = "microarray")
+        h3("ncRNA Expression Data"),
+        radioButtons(ns("name_ncRNA"), label = "Name for ncRNA",
+                     choices = list("Approved Symbol" = 0,
+                                    "ENSG" = 1, 
+                                    "HSALN" = 2,
+                                    "HGNC" = 3),
+                     selected = 0),
+        numericInput(ns("cutoff_ncRNA"), label = "Filter Cutoff for ncRNA",
+                     value = 0,
+                     min = 0,
+                     max = 1,
+                     step = 0.1
         ),
-        # #### calculate signed delta and q-values
-        actionButton(ns('SingleDE'), 'Bayesian differential analysis', class="btn-success",
-                     icon = icon("play")),
+        p("Filter for columns whose average value is greater than this threshold."),
+        
+        fileInput(ns("ncRNA_file"), 'Upload ncRNA expression data file (.csv)',
+                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                           '.csv')
+        ),
+        
+        h3("Gene Expression Data"),
+        radioButtons(ns("name_gene"), label = "Name for Gene",
+                     choices = list("Approved Symbol" = 0,
+                                    "ENSG" = 1, 
+                                    "HGNC" = 2),
+                     selected = 0),
+        numericInput(ns("cutoff_gene"), label = "Filter Cutoff for Gene",
+                     value = 0,
+                     min = 0,
+                     max = 1,
+                     step = 0.1
+        ),
+        p("Filter for columns whose average value is greater than this threshold."),
+        
+        fileInput(ns("gene_file"), 'Upload gene expression data file (.csv)',
+                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                           '.csv')
+        ),
         
         # h2("Preprocess data"),
         # br(),
@@ -63,19 +62,25 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ##########################
         # Save and Metadata      #
         ##########################
-        h2("Save single study"),
-        textInput(ns("studyName"), "Study name (Please do not use '_' in study name):", value = ""),
-        actionButton(ns('saveStudy'), 'Save', icon=icon("save"), class="btn-success")
+        # h2("Save single study"),
+        # textInput(ns("studyName"), "Study name (Please do not use '_' in study name):", value = ""),
+        # actionButton(ns('saveStudy'), 'Save', icon=icon("save"), class="btn-success")
+        h3("Clinical Data"),
+        fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
+                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                           '.csv')
+        ),
       ),
 
       mainPanel(
-        h3("Study summary"),
-        DT::dataTableOutput(ns("studySummary")),
+        h3("ncRNA Expression"),
+        DT::dataTableOutput(ns("ncRNA_file")),
         hr(),
-        h3("Bayesian differential analysis summary"),
-        textOutput(ns('DEdescription')),
-        br(),
-        DT::dataTableOutput(ns("DESummary"))
+        h3("Gene Expression"),
+        DT::dataTableOutput(ns("gene_file")),
+        hr(),
+        h3("Clinical Data"),
+        DT::dataTableOutput(ns("clinical_file"))
       )
     )
   )
