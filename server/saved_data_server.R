@@ -2,185 +2,239 @@ saved_data_server <- function(input, output, session) {
   
   ns <- NS("saved_data")
   
-  DB <- reactiveValues(meta=meta(db), 
-                       all_studies=DB.load(db, list.files(path=db@dir)))
   
+  ##########################
+  # Reactive Values        #
+  ##########################
+  DB <- reactiveValues(
+    MergedDB=MergedDB.load(db), 
+    MergedSpecies=MergedSpecies.load(db), 
+    MergedStudyNames=MergedStudyNames.load(db), 
+    pathway.list=NULL,
+    ACS_ADS_global=NULL,
+    ACS_ADS_pathway=NULL
+  )
+  ClustDEevid = reactiveValues(res=NULL,DEevid.pos=NULL,DEevid.neg=NULL)
+  ##########################
+  # Observers              #
+  ##########################
+  # tab change to load merged data
   observeEvent(input$tabChange, {
-    DB$all_studies <- DB.load(db, list.files(path=db@dir))
-    DB$meta <- meta(db)  
-    output$table_merge <- DT::renderDataTable(
-      if(file.exists(paste(DB.load.working.dir(db), 
-                           "MergedDB.rds", sep="/"))){
-        DT::datatable({
-          MergedSpecies=MergedSpecies.load(db) 
-          MergedStudyNames=MergedStudyNames.load(db) 
-          data.frame(MergedSpecies,MergedStudyNames)
-        })
+    try({
+      DB$MergedDB <- MergedDB.load(db)
+      DB$MergedSpecies <- MergedSpecies.load(db)
+      DB$MergedStudyNames <- MergedStudyNames.load(db)
+      print(DB$MergedStudyNames)
+      
+      if(length(DB$MergedDB)<2) {
+        stop("At least two studies are needed")
       }
-    )
+      # if(length(unique(DB$MergedSpecies))<2) {
+      #   stop("At least two species are neeeded")
+      # }
+      output$globalACS_ADSTable <- DT::renderDataTable({
+        if (!file.exists(paste(DB.load.working.dir(db),
+                               "ACS_ADS_global.RData", sep="/"))){
+          data.frame(NULL)
+        }else{
+          load(paste(DB.load.working.dir(db),"ACS_ADS_global.RData", sep="/"))
+          DB$ACS_ADS_global <- ACS_ADS_global
+          if(length(DB$ACS_ADS_global$ACS)==1){
+            res <- matrix(1, length(DB$MergedDB), 
+                          length(DB$MergedDB))
+            colnames(res) <- rownames(res) <- DB$MergedStudyNames
+            res[1,2] <- paste(round(DB$ACS_ADS_global$ACS,3), " (p-val= ", 
+                              round(DB$ACS_ADS_global$ACSpvalue,3), ")", sep="")
+            res[2,1] <- paste(round(DB$ACS_ADS_global$ADS,3), " (p-val= ", 
+                              round(DB$ACS_ADS_global$ADSpvalue,3), ")", sep="")
+            res
+            print(res)
+          }else{
+            res <- DB$ACS_ADS_global$ACS
+            for(i in 1:nrow(res)){
+              for(j in 1:ncol(res)){
+                if(j>=i){
+                  res[i,j] <- paste(
+                    round(DB$ACS_ADS_global$ACS[i,j],3), 
+                    " (pval=", 
+                    round(DB$ACS_ADS_global$ACSpvalue[i,j],3), ")", sep="")
+                }
+                else{
+                  res[i,j] <- paste(
+                    round(DB$ACS_ADS_global$ADS[i,j],3), 
+                    " (pval=", 
+                    round(DB$ACS_ADS_global$ADSpvalue[i,j],3), ")", sep="")
+                }
+              }
+            }
+            res
+          }
+        }
+      })
+      
+    }, session)
+    print(paste("saving directory is: ", DB.load.working.dir(db), sep=""))
   })
-  output$table <- DT::renderDataTable({
-    DT::datatable({DB$meta})
-  })
-
-
-  # observeEvent(input$orthologous, {
-  #   if (!is.null(input$orthologous)) {
-  #     inFile <- input$orthologous
-  #     DB$full_ortholog <- read.csv(inFile$datapath, stringsAsFactors = F,
-  #                                  header=T)
-  #   }
+  
+  # # select comparison type
+  # observeEvent(input$compType, {
+  #   try({
+  #     if(input$compType != DB$compType){
+  #       stop(paste("Please select ", DB$compType, sep=""))
+  #     }
+  #   }, session)
   # })
   
-  
-  observeEvent(c(input$select_orthologous,input$orthologous),{
+  # global ACS/ADS
+  # output  global ACS/ADS
+  output$Global_ACS_ADS_note <- renderText("Upper triangular matrix: genome-wide c-scores (p-value). 
+                                           Lower triangular matrix: genome-wide d-scores (p-value).")
+  observeEvent(input$ACS_ADS, {
+    wait(session, "Calculating global c-scores & d-scores, may take a while")
     path_old <- getwd()
-    
     try({
-      if(input$select_orthologous == "no_orth"){
-        DB$full_ortholog = NULL
-      }else if(input$select_orthologous == "upload"){
-        if(!is.null(input$orthologous)){
-          file <- input$orthologous
-          ext <- tools::file_ext(file$datapath)
-          req(file)
-          validate(need(ext == "RData"|ext == "rda", "Please upload a .RData or .rda file"))
-          DB$full_ortholog = get(load(file$datapath))
+      path_old <- getwd()
+      setwd(DB.load.working.dir(db))
+      ACS_ADS_global <- multi_ACS_ADS_global(DB$MergedDB, DB$MergedStudyNames,
+                                             measure=input$measure, B=input$permNumGlobal)
+      save(ACS_ADS_global, file="ACS_ADS_global.RData")
+      DB$ACS_ADS_global <- ACS_ADS_global
+      print("Genome-wide c-scores and d-scores are saved as 'ACS_ADS_global'.")
+      
+      load("ACS_ADS_global.RData")
+      DB$ACS_ADS_global <- ACS_ADS_global
+      setwd(path_old)
+      
+      # ## global and pathway ACS/ADS
+      # # single
+      # if (DB$compType == "single"){
+      #   path_old <- getwd()
+      #   setwd(DB.load.working.dir(db))
+      #   
+      #   dat1 <- DB$MergedDB[[1]]
+      #   dat2 <- DB$MergedDB[[2]]
+      #   deIndex1 <- attr(DB$MergedDB[[1]], "DEindex")
+      #   deIndex2 <- attr(DB$MergedDB[[2]], "DEindex")
+      #   permOut <- perm_global(dat1,dat2,measure=input$measure,B=input$permNumGlobal)
+      #   ACS_ADS_global$ACS <- ACS_global(dat1, dat2, deIndex1, deIndex2, measure=input$measure)
+      #   print("global ACS finished")
+      #   ACS_ADS_global$ACSpvalue <- pACS_global(dat1, dat2, deIndex1, deIndex2, 
+      #                                           input$measure, DB$ACS_ADS_global$ACS, permOut)
+      #   print("glocal pACS finished")
+      #   ACS_ADS_global$ADS <- ADS_global(dat1, dat2, deIndex1, deIndex2, measure=input$measure)
+      #   print("glocal ADS finished")
+      #   ACS_ADS_global$ADSpvalue <- pADS_global(dat1, dat2, deIndex1, deIndex2,
+      #                                           input$measure, DB$ACS_ADS_global$ADS, permOut)
+      #   print("glocal pADS finished")
+      #   DB$ACS_ADS_global <- ACS_ADS_global
+      #   save(ACS_ADS_global, file="ACS_ADS_global.RData")
+      #   print("global ACS/ADS saved")
+      #   
+      #   setwd(path_old)
+      #   
+      #   ## multiple comparison
+      # }else if(DB$compType == "multiple"){
+      #   
+      #   ## multiple global 
+      #   path_old <- getwd()
+      #   setwd(DB.load.working.dir(db))
+      #   ACS_ADS_global <- multi_ACS_ADS_global(DB$MergedDB, DB$MergedStudyNames,
+      #                                          measure=input$measure, B=input$permNumGlobal)
+      #   save(ACS_ADS_global, file="ACS_ADS_global.RData")
+      #   DB$ACS_ADS_global <- ACS_ADS_global
+      #   print("ACS_ADS_global saved")
+      #   
+      #   load("ACS_ADS_global.RData")
+      #   DB$ACS_ADS_global <- ACS_ADS_global
+      #   setwd(path_old)
+      # }else{
+      #   stop("At least one study is needed in each species")
+      # }
+      
+      # output  global ACS/ADS
+      output$globalACS_ADSTable <- DT::renderDataTable({
+        if (is.null(DB$ACS_ADS_global$ACS)){
+          data.frame(NULL)
+        }else{
+          if(length(DB$ACS_ADS_global$ACS)==1){
+            res <- matrix(1, length(DB$MergedDB), 
+                          length(DB$MergedDB))
+            colnames(res) <- rownames(res) <- DB$MergedStudyNames
+            res[1,2] <- paste(round(DB$ACS_ADS_global$ACS,3), " (p-val= ", 
+                              round(DB$ACS_ADS_global$ACSpvalue,3), ")", sep="")
+            res[2,1] <- paste(round(DB$ACS_ADS_global$ADS,3), " (p-val= ", 
+                              round(DB$ACS_ADS_global$ADSpvalue,3), ")", sep="")
+            res
+            print(res)
+          }else{
+            res <- DB$ACS_ADS_global$ACS
+            for(i in 1:nrow(res)){
+              for(j in 1:ncol(res)){
+                if(j>=i){
+                  res[i,j] <- paste(
+                    round(DB$ACS_ADS_global$ACS[i,j],3), 
+                    " (pval=", 
+                    round(DB$ACS_ADS_global$ACSpvalue[i,j],3), ")", sep="")
+                }
+                else{
+                  res[i,j] <- paste(
+                    round(DB$ACS_ADS_global$ADS[i,j],3), 
+                    " (pval=", 
+                    round(DB$ACS_ADS_global$ADSpvalue[i,j],3), ")", sep="")
+                }
+              }
+            }
+            res
+          }
         }
-        # 
-        # if(!is.null(input$orthologous)){
-        #   inFile <- input$orthologous
-        #   ext <- tools::file_ext(inFile$datapath)
-        #   req(inFile)
-        #   validate(need(ext == "csv", "Please upload a .csv"))
-        #   DB$full_ortholog = read.csv(inFile$datapath, stringsAsFactors = F,
-        #                               header=T)
-        # }
-      }else if(input$select_orthologous == "hs_mm_orth"){
-        data(hs_mm_orth, package = "CAMO")
-        DB$full_ortholog = hs_mm_orth
-      }else if(input$select_orthologous == "hs_rn_orth"){
-        data(hs_rn_orth, package = "CAMO")
-        DB$full_ortholog = hs_rn_orth
-      }else if(input$select_orthologous == "hs_ce_orth"){
-        data(hs_ce_orth, package = "CAMO")
-        DB$full_ortholog = hs_ce_orth
-      }else if(input$select_orthologous == "hs_dm_orth"){
-        data(hs_dm_orth, package = "CAMO")
-        DB$full_ortholog = hs_dm_orth
-      }else if(input$select_orthologous == "ce_dm_orth"){
-        data(ce_dm_orth, package = "CAMO")
-        DB$full_ortholog = ce_dm_orth
-      }
-      output$table_orth <- DT::renderDataTable(DT::datatable({
-        DB$full_ortholog
-      }))
-    },session)
+      })
+      sendSuccessMessage(session, "Genome-wide c-scores & d-scores are saved as 'ACS_ADS_global'.")
+    }, session)
     setwd(path_old)
     done(session)
   })
-
   
+  source("./Function_early_late.R")
   
-  output$selected <- renderText({
-    selected <- input$table_rows_selected
-    if(length(selected) == 0){
-      "You haven't select any study yet"
-    }else{
-      paste(DB$meta[selected,"studyName"], sep=", ")
-      
-    }
-  })
-  
-  observeEvent(input$delete, {
-    selected <- input$table_rows_selected
-    if(length(selected) != 0 & !is.null(DB$meta)){
-      selected <- rownames(DB$meta[selected,])
-      DB.delete(db, selected)
-      DB$all_studies <- DB.load(db, list.files(path=db@dir)) #DB$all_studies order and meta(db) order does not match
-      studies <- DB.load(db, list.files(path=db@dir))
-      db.meta  <- lapply(DB$all_studies, function(study_use) meta(study_use))
-      DB$meta <- do.call(rbind, db.meta)
-      sendSuccessMessage(session, paste(selected, "deleted"))
-    }else{
-      sendErrorMessage(session, "You haven't select any study yet")
-    }
-  })
-  
-  
-  observeEvent(input$merge, {
-    wait(session, "Match and merge")
+  observeEvent(input$plotGlobalMDS, {
+    wait(session, "Generating Graphs")
+    
     try({
-      selected <- input$table_rows_selected
-      print(selected)
-      print(DB$meta)
-      if(length(selected) != 0 & !is.null(DB$meta)){
-        selected <- as.numeric(rownames(DB$meta[selected,]))
-        species <- sapply(1:length(DB$all_studies), function(x) 
-          DB$all_studies[[x]]@species)[selected]
-        print(species)
-        studyNames <- sapply(1:length(DB$all_studies), function(x) 
-          DB$all_studies[[x]]@studyName)[selected]
-        print(studyNames)
-        
-        mcmc.list <- lapply(1:length(DB$all_studies), function(x) 
-          DB$all_studies[[x]]@MCMC)[selected]
-        # if(is.null(DB$full_ortholog)){
-        #   data(hs_mm_orth, package = "CAMO")
-        #   DB$full_ortholog <- hs_mm_orth
-        # }
-        #print(paste("ref number :", which(species == input$reference)[1], sep=""))
-        mcmc.merge.list <- CAMO::merge(mcmc.list, species = species,
-                                       ortholog.db = DB$full_ortholog, 
-                                       reference=which(species == input$reference)[1])
-        names(mcmc.merge.list) = studyNames
-        #print("finish merge")
-        
-        saveRDS(mcmc.merge.list,
-                file=paste(DB.load.working.dir(db), 
-                           "MergedDB.rds", sep="/"))
-        saveRDS(species, 
-                file=paste(DB.load.working.dir(db), 
-                           "MergedSpecies.rds", sep="/"))
-        saveRDS(studyNames, 
-                file=paste(DB.load.working.dir(db), 
-                           "MergedStudyNames.rds", sep="/"))
-        
-        output$table_merge <- DT::renderDataTable(      
-          DT::datatable({
-          MergedSpecies=MergedSpecies.load(db) 
-          MergedStudyNames=MergedStudyNames.load(db) 
-          data.frame(MergedSpecies,MergedStudyNames)
-        }))
-        
-        message = paste("Data are successfully merged")
-        sendSuccessMessage(session, message)
-      }else{
-        sendErrorMessage(session, "You haven't select any study yet")
-      }
-    },session)
-    done(session)
-  }, label="save study")
-  
-
-  ##########################
-  # Render output/UI       #
-  ##########################
-  output$reference = renderUI({
-    if(length(DB$all_studies) != 0 & input$select_orthologous != "no_orth"){
-      selectInput(ns('reference'), 'Reference species', 
-                  as.character(unique(sapply(1:length(DB$all_studies), function(x) 
-                    DB$all_studies[[x]]@species))),
-                  selected=as.character(unique(sapply(1:length(DB$all_studies), 
-                                                      function(x) DB$all_studies[[x]]@species))) [1])
+      library(utils)
       
-    }
+      p=6 # determine how many ncRNA in the matrix first # first 6 rows
+      res <- reactive(early_late_igraph(adj_early,adj_late,prob_early,prob_late,ncRNA_num=p,early_graph_name="early_edge_color_graph2.jpeg",late_graph_name="late_edge_color_graph2.jpeg"))
+      
+      print("Graphs are done")
+      output$globalMdsFig <- renderImage({
+        # This file will be removed later by renderImage
+        # A temp file to save the output.
+        # This file will be removed later by renderImage
+        outfile <- tempfile(fileext = '.png')
+        
+        # Generate the PNG
+        png(outfile, width = 800, height = 600)
+        p=6 # determine how many ncRNA in the matrix first # first 6 rows
+        early_late_igraph(adj_early,adj_late,prob_early,prob_late,ncRNA_num=p,early_graph_name="early_edge_color_graph2.jpeg",late_graph_name="late_edge_color_graph2.jpeg")
+        dev.off()
+        
+        # Return a list containing the filename
+        list(src = outfile,
+             contentType = 'image/png',
+             width = 800,
+             height = 600,
+             alt = "This is alternate text")
+      }, deleteFile = TRUE)
+      
+      sendSuccessMessage(session, "Genome-wide MDS map is done")
+    }, session)
+    done(session)
   })
   
-  
-  output$upload_orthologous = renderUI({
-    if(input$select_orthologous == "upload"){
-      fileInput(ns("orthologous"), "Upload an ortholog file (.RData/.rda)", accept = c(".RData",".rda"))
-    }
-  })
+  # # comparison type
+  # output$compType = renderUI({
+  #   selectInput(ns('compType'), 'Selelct comparison type:', 
+  #               c("single", "multiple"),
+  #               selected=as.character(DB$compType))
+  # })
 }
