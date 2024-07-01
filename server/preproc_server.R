@@ -45,108 +45,24 @@ preproc_server <- function(input, output, session) {
   # NAME SELECTION
   
   # watch for name selection for ncRNA
+  name_ncRNA <- 0
+  
   observeEvent(input$name_ncRNA, {
-    if (input$name_ncRNA == 2) {
-      ENSG <- FALSE
-    } else {
-      ENSG <- TRUE
-    }
-    
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- fileText[,-1]
-        genes <- colnames(df)
-        
-        if (input$name_ncRNA == 1) {
-          ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_lnci.csv")
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$ENSG[which(ref$name == gene)[1]])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 2) {
-          ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HSAL_lnci.csv")
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HSAL[which(ref$name == gene)[1]])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 3) {
-          ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HGNC_lnci.csv")
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC[which(ref$name == gene)[1]])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        }
-        
-        df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
-        df
-      })
-    } else {
-      return(NULL)
+    if (input$name_ncRNA == 1) {
+      name_ncRNA <- 1
+    } else if (input$name_ncRNA == 2) {
+      name_ncRNA <- 2
+    } else if (input$name_ncRNA == 3) {
+      name_ncRNA <- 3
     }
   }, label="name for gene")
-  
+
   # watch for name selection for gene
+  name_gene <- 0
+  
   observeEvent(input$name_gene, {
-    if (input$name_gene == 2) {
-      ENSG <- FALSE
-    } else {
-      ENSG <- TRUE
-    }
-    
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath)
-        df <- fileText[,-1]
-        ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        
-        if (input$name_gene == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$Ensembl_gene_ID[which(ref$Approved_symbol == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        } else if (input$name_gene == 2) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC_ID[which(ref$Approved_symbol == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        }
-        
-        df <- as.data.frame(internal_filter(df, input$cutoff_gene)[1], check.names = FALSE)
-        df
-      })
-    } else {
-      return(NULL)
+    if (input$name_gene == 1) {
+      name_gene <- 1
     }
   }, label="name for gene")
   
@@ -163,34 +79,34 @@ preproc_server <- function(input, output, session) {
         
         genes <- colnames(df)
         
-        if (input$name_ncRNA == 1) {
+        if (name_ncRNA == 1) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$ENSG[which(ref$name == gene)[1]])
+            if (gene %in% ref$ENSG) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
           }
           colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 2) {
+        } else if (name_ncRNA == 2) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HSAL_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HSAL[which(ref$name == gene)[1]])
+            if (gene %in% ref$HSAL) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
           }
           colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 3) {
+        } else if (name_ncRNA == 3) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HGNC_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC[which(ref$name == gene)[1]])
+            if (gene %in% ref$HGNC) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
@@ -216,21 +132,11 @@ preproc_server <- function(input, output, session) {
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
         
-        if (input$name_gene == 1) {
+        if (name_gene == 1) {
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$Ensembl_gene_ID[which(ref$Approved_symbol == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        } else if (input$name_gene == 2) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC_ID[which(ref$Approved_symbol == gene)])
+            if (gene %in% ref$Ensembl_gene_ID) {
+              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
@@ -259,34 +165,34 @@ preproc_server <- function(input, output, session) {
         
         genes <- colnames(df)
         
-        if (input$name_ncRNA == 1) {
+        if (name_ncRNA == 1) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$ENSG[which(ref$name == gene)[1]])
+            if (gene %in% ref$ENSG) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
           }
           colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 2) {
+        } else if (name_ncRNA == 2) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HSAL_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HSAL[which(ref$name == gene)[1]])
+            if (gene %in% ref$HSAL) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
           }
           colnames(df) <- ENSG_ids
-        } else if (input$name_ncRNA == 3) {
+        } else if (name_ncRNA == 3) {
           ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HGNC_lnci.csv")
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$name) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC[which(ref$name == gene)[1]])
+            if (gene %in% ref$HGNC) {
+              ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
@@ -313,27 +219,28 @@ preproc_server <- function(input, output, session) {
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
         
-        if (input$name_gene == 1) {
+        if (name_gene == 1) {
           ENSG_ids <- c()
           for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$Ensembl_gene_ID[which(ref$Approved_symbol == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
-            }
-          }
-          colnames(df) <- ENSG_ids
-        } else if (input$name_gene == 2) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Approved_symbol) {
-              ENSG_ids <- c(ENSG_ids, ref$HGNC_ID[which(ref$Approved_symbol == gene)])
+            if (gene %in% ref$Ensembl_gene_ID) {
+              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
             } else {
               ENSG_ids <- c(ENSG_ids, "N/A")
             }
           }
           colnames(df) <- ENSG_ids
         }
+        # } else if (input$name_gene == 2) {
+        #   ENSG_ids <- c()
+        #   for (gene in genes) {
+        #     if (gene %in% ref$Approved_symbol) {
+        #       ENSG_ids <- c(ENSG_ids, ref$HGNC_ID[which(ref$Approved_symbol == gene)])
+        #     } else {
+        #       ENSG_ids <- c(ENSG_ids, "N/A")
+        #     }
+        #   }
+        #   colnames(df) <- ENSG_ids
+        # }
         
         df
       })
