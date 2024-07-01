@@ -9,19 +9,22 @@ preproc_ui <- function(id, label= "preprocessing data") {
         # Upload Data 
         ##########################
         h2("Upload Data"),
-        # textInput(ns("species"), label="Species name:", value = "", width = NULL,
-        #           placeholder = NULL),
-        # radioButtons(ns("species"), label = "Chose species",
-        #         choices = list("human" = "human", "mouse" = "mouse"),
-        #         selected = "human"),
-        #### chose input data type
+        
         h3("ncRNA Expression Data"),
-        radioButtons(ns("name_ncRNA"), label = "Name for ncRNA",
-                     choices = list("Approved Symbol" = 0,
-                                    "ENSG" = 1, 
-                                    "HSALN" = 2,
-                                    "HGNC" = 3),
-                     selected = 0),
+        p("All lncRNA names/IDs will be converted to LNCipedia format."),
+        radioButtons(ns("RNA_type"), label = "Select the type of ncRNA data.",
+                     choices = list("miRNA" = 1, 
+                                    "lncRNA" = 2),
+                     selected = 1),
+        conditionalPanel(
+          condition = "input['preproc-RNA_type'] == 2",
+          radioButtons(ns("name_ncRNA"), label = "Select the naming format of your lncRNA data.",
+                       choices = list("LNCipedia" = 0,
+                                      "ENSG" = 1, 
+                                      "HSALN" = 2,
+                                      "HGNC" = 3),
+                       selected = 0),
+        ),
         numericInput(ns("cutoff_ncRNA"), label = "Filter Cutoff for ncRNA",
                      value = 0,
                      min = 0,
@@ -36,10 +39,10 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ),
         
         h3("Gene Expression Data"),
-        radioButtons(ns("name_gene"), label = "Name for Gene",
-                     choices = list("Approved Symbol" = 0,
-                                    "ENSG" = 1, 
-                                    "HGNC" = 2),
+        p("All gene names/IDs will be converted to the HGNC approved symbol."),
+        radioButtons(ns("name_gene"), label = "Select the naming format of your gene data.",
+                     choices = list("HGNC Symbol" = 0, 
+                                    "ENSG ID" = 1),
                      selected = 0),
         numericInput(ns("cutoff_gene"), label = "Filter Cutoff for Gene",
                      value = 0,
@@ -54,17 +57,6 @@ preproc_ui <- function(id, label= "preprocessing data") {
                            '.csv')
         ),
         
-        # h2("Preprocess data"),
-        # br(),
-        # actionButton(ns('preprocSingleStudy'), 'Preprocess single study', class="btn-success"),
-        # tags$hr(),
-
-        ##########################
-        # Save and Metadata      #
-        ##########################
-        # h2("Save single study"),
-        # textInput(ns("studyName"), "Study name (Please do not use '_' in study name):", value = ""),
-        # actionButton(ns('saveStudy'), 'Save', icon=icon("save"), class="btn-success")
         h3("Clinical Data"),
         fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
