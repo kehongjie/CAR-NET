@@ -1,4 +1,10 @@
 installed <- installed.packages()[,"Package"]
+<<<<<<< HEAD
+=======
+
+## test
+
+>>>>>>> 62ec91a8086b7b7b8bff08ac6025a36d3fb03e96
 #enabled <- c()
 #for (toolset in TOOLSET.all) {
 #  if (toolset %in% installed) {
@@ -39,11 +45,19 @@ shinyUI(
     # tab for manipulating saved data
     saved_data_ui("saved_data"),
     #analysis_ui("analysis"),
+<<<<<<< HEAD
     # navbarMenu("Downstream Analysis",
     #            global_ui("global"),
     #            pathway_ui("pathway"),
     #            indPathway_ui("indPathway")
     # ),
+=======
+    navbarMenu("Downstream Analysis",
+               global_ui("global"),
+               pathway_ui("pathway"),
+               indPathway_ui("indPathway")
+    ),
+>>>>>>> 62ec91a8086b7b7b8bff08ac6025a36d3fb03e96
     # tab for toolsets
     #toolsets,
     tags$div(
