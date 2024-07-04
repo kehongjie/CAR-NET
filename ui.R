@@ -1,32 +1,4 @@
 installed <- installed.packages()[,"Package"]
-<<<<<<< HEAD
-=======
-
-## test
-
->>>>>>> 62ec91a8086b7b7b8bff08ac6025a36d3fb03e96
-#enabled <- c()
-#for (toolset in TOOLSET.all) {
-#  if (toolset %in% installed) {
-#    enabled <- c(enabled, toolset)
-#  }
-#}
-
-#toolsets <- c("Toolsets")
-#if (TOOLSET.de %in% enabled)
-#  toolsets <- c(toolsets, list(meta_de_ui("meta_de")))
-#if (TOOLSET.clust %in% enabled)
-#  toolsets <- c(toolsets, list(meta_clust_ui("meta_clust")))
-#if (TOOLSET.path %in% enabled)
-#  toolsets <- c(toolsets, list(meta_path_ui("meta_path")))
-#if (TOOLSET.dcn %in% enabled)
-#  toolsets <- c(toolsets, list(meta_dcn_ui("meta_dcn")))
-
-#if (length(toolsets) > 1) {
-#  toolsets <- do.call(navbarMenu, toolsets)
-#} else {
-#  toolsets <- tags$div()
-#}
 
 shinyUI(
   navbarPage("NGRN", id="nav",
@@ -45,19 +17,7 @@ shinyUI(
     # tab for manipulating saved data
     saved_data_ui("saved_data"),
     #analysis_ui("analysis"),
-<<<<<<< HEAD
-    # navbarMenu("Downstream Analysis",
-    #            global_ui("global"),
-    #            pathway_ui("pathway"),
-    #            indPathway_ui("indPathway")
-    # ),
-=======
-    navbarMenu("Downstream Analysis",
-               global_ui("global"),
-               pathway_ui("pathway"),
-               indPathway_ui("indPathway")
-    ),
->>>>>>> 62ec91a8086b7b7b8bff08ac6025a36d3fb03e96
+
     # tab for toolsets
     #toolsets,
     tags$div(
