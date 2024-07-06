@@ -7,7 +7,6 @@ shinyServer(function(input, output, session) {
   callModule(preproc_server, "preproc")
   callModule(saved_data_server, "saved_data")
   #callModule(analysis_server, "analysis")
-  callModule(global_server, "global")
   callModule(pathway_server, "pathway")
   callModule(indPathway_server, "indPathway")
   #callModule(combnPathway_server, "combnPathway")

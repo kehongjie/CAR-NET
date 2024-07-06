@@ -12,7 +12,7 @@ shinyUI(
     ),
     # tab for global settings
     setting_ui("setting"),
-    # tab for preprosessing
+    # tab for preprocessing
     preproc_ui("preproc"),
     # tab for manipulating saved data
     saved_data_ui("saved_data"),

@@ -32,7 +32,11 @@ preproc_server <- function(input, output, session) {
       output$ncRNA_file <- DT::renderDataTable({
         filePath <- input$ncRNA_file
         fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- as.data.frame(internal_filter(fileText[,-1], input$cutoff_ncRNA)[1], check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
         
         genes <- colnames(df)
         
@@ -76,7 +80,7 @@ preproc_server <- function(input, output, session) {
           }
         }
         
-        df
+        t(df)
       })
     } else {
       return(NULL)
@@ -89,7 +93,11 @@ preproc_server <- function(input, output, session) {
       output$gene_file <- DT::renderDataTable({
         filePath <- input$gene_file
         fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- as.data.frame(internal_filter(fileText[,-1], input$cutoff_gene)[1], check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        df <- as.data.frame(internal_filter(df, input$cutoff_gene)[1], check.names = FALSE)
         
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
@@ -106,7 +114,7 @@ preproc_server <- function(input, output, session) {
           colnames(df) <- ENSG_ids
         }
         
-        df
+        t(df)
       })
     } else {
       return(NULL)
@@ -122,8 +130,11 @@ preproc_server <- function(input, output, session) {
       output$ncRNA_file <- DT::renderDataTable({
         filePath <- input$ncRNA_file
         fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        
-        df <- as.data.frame(internal_filter(fileText[,-1], input$cutoff_ncRNA)[1], check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
         
         genes <- colnames(df)
         val <- isolate(input$name_ncRNA)
@@ -168,7 +179,7 @@ preproc_server <- function(input, output, session) {
           }
         }
         
-        df
+        t(df)
       })
     } else {
       return(NULL)
@@ -181,8 +192,11 @@ preproc_server <- function(input, output, session) {
       output$gene_file <- DT::renderDataTable({
         filePath <- input$gene_file
         fileText <- read.csv(filePath$datapath)
-        
-        df <- as.data.frame(internal_filter(fileText[,-1], input$cutoff_gene)[1], check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        df <- as.data.frame(internal_filter(df, input$cutoff_gene)[1], check.names = FALSE)
         
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
@@ -200,7 +214,7 @@ preproc_server <- function(input, output, session) {
           colnames(df) <- ENSG_ids
         }
         
-        df
+        t(df)
       })
     } else {
       return(NULL)

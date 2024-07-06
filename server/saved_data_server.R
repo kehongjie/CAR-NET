@@ -14,182 +14,56 @@ saved_data_server <- function(input, output, session) {
     ACS_ADS_global=NULL,
     ACS_ADS_pathway=NULL
   )
-  ClustDEevid = reactiveValues(res=NULL,DEevid.pos=NULL,DEevid.neg=NULL)
+  
+  
   ##########################
   # Observers              #
   ##########################
-  # tab change to load merged data
-  observeEvent(input$tabChange, {
-    try({
-      DB$MergedDB <- MergedDB.load(db)
-      DB$MergedSpecies <- MergedSpecies.load(db)
-      DB$MergedStudyNames <- MergedStudyNames.load(db)
-      print(DB$MergedStudyNames)
-      
-      if(length(DB$MergedDB)<2) {
-        stop("At least two studies are needed")
-      }
-      # if(length(unique(DB$MergedSpecies))<2) {
-      #   stop("At least two species are neeeded")
-      # }
-      output$globalACS_ADSTable <- DT::renderDataTable({
-        if (!file.exists(paste(DB.load.working.dir(db),
-                               "ACS_ADS_global.RData", sep="/"))){
-          data.frame(NULL)
-        }else{
-          load(paste(DB.load.working.dir(db),"ACS_ADS_global.RData", sep="/"))
-          DB$ACS_ADS_global <- ACS_ADS_global
-          if(length(DB$ACS_ADS_global$ACS)==1){
-            res <- matrix(1, length(DB$MergedDB), 
-                          length(DB$MergedDB))
-            colnames(res) <- rownames(res) <- DB$MergedStudyNames
-            res[1,2] <- paste(round(DB$ACS_ADS_global$ACS,3), " (p-val= ", 
-                              round(DB$ACS_ADS_global$ACSpvalue,3), ")", sep="")
-            res[2,1] <- paste(round(DB$ACS_ADS_global$ADS,3), " (p-val= ", 
-                              round(DB$ACS_ADS_global$ADSpvalue,3), ")", sep="")
-            res
-            print(res)
-          }else{
-            res <- DB$ACS_ADS_global$ACS
-            for(i in 1:nrow(res)){
-              for(j in 1:ncol(res)){
-                if(j>=i){
-                  res[i,j] <- paste(
-                    round(DB$ACS_ADS_global$ACS[i,j],3), 
-                    " (pval=", 
-                    round(DB$ACS_ADS_global$ACSpvalue[i,j],3), ")", sep="")
-                }
-                else{
-                  res[i,j] <- paste(
-                    round(DB$ACS_ADS_global$ADS[i,j],3), 
-                    " (pval=", 
-                    round(DB$ACS_ADS_global$ADSpvalue[i,j],3), ")", sep="")
-                }
-              }
-            }
-            res
-          }
-        }
-      })
-      
-    }, session)
-    print(paste("saving directory is: ", DB.load.working.dir(db), sep=""))
-  })
   
-  # # select comparison type
-  # observeEvent(input$compType, {
-  #   try({
-  #     if(input$compType != DB$compType){
-  #       stop(paste("Please select ", DB$compType, sep=""))
-  #     }
-  #   }, session)
-  # })
+  # Bayesian Network Generation
+  source("./bn_main.R")
   
-  # global ACS/ADS
-  # output  global ACS/ADS
-  output$Global_ACS_ADS_note <- renderText("Upper triangular matrix: genome-wide c-scores (p-value). 
-                                           Lower triangular matrix: genome-wide d-scores (p-value).")
   observeEvent(input$ACS_ADS, {
-    wait(session, "Calculating global c-scores & d-scores, may take a while")
+    wait(session, "Generating Bayesian Network, may take a while")
     path_old <- getwd()
     try({
       path_old <- getwd()
-      setwd(DB.load.working.dir(db))
-      ACS_ADS_global <- multi_ACS_ADS_global(DB$MergedDB, DB$MergedStudyNames,
-                                             measure=input$measure, B=input$permNumGlobal)
-      save(ACS_ADS_global, file="ACS_ADS_global.RData")
-      DB$ACS_ADS_global <- ACS_ADS_global
-      print("Genome-wide c-scores and d-scores are saved as 'ACS_ADS_global'.")
+      filePath <- input$ncRNA_file
+      print(filePath)
       
-      load("ACS_ADS_global.RData")
-      DB$ACS_ADS_global <- ACS_ADS_global
-      setwd(path_old)
+      x <- read.csv("./data/TCGA_KIRP_early_lncRNA_top5per.csv", header=T)
+      rownames(x) <- x[,1]
+      x <- x[,-1]
+      X <- t(x)
+      y <- read.csv("./data/TCGA_KIRP_early_gene_top5per.csv", header=T)
+      rownames(y) <- y[,1]
+      y <- y[,-1]
+      Y <- t(y)
+
+      fit <- bn.main(X=X, Y=Y, alpha=1e-5)
       
-      # ## global and pathway ACS/ADS
-      # # single
-      # if (DB$compType == "single"){
-      #   path_old <- getwd()
-      #   setwd(DB.load.working.dir(db))
-      #   
-      #   dat1 <- DB$MergedDB[[1]]
-      #   dat2 <- DB$MergedDB[[2]]
-      #   deIndex1 <- attr(DB$MergedDB[[1]], "DEindex")
-      #   deIndex2 <- attr(DB$MergedDB[[2]], "DEindex")
-      #   permOut <- perm_global(dat1,dat2,measure=input$measure,B=input$permNumGlobal)
-      #   ACS_ADS_global$ACS <- ACS_global(dat1, dat2, deIndex1, deIndex2, measure=input$measure)
-      #   print("global ACS finished")
-      #   ACS_ADS_global$ACSpvalue <- pACS_global(dat1, dat2, deIndex1, deIndex2, 
-      #                                           input$measure, DB$ACS_ADS_global$ACS, permOut)
-      #   print("glocal pACS finished")
-      #   ACS_ADS_global$ADS <- ADS_global(dat1, dat2, deIndex1, deIndex2, measure=input$measure)
-      #   print("glocal ADS finished")
-      #   ACS_ADS_global$ADSpvalue <- pADS_global(dat1, dat2, deIndex1, deIndex2,
-      #                                           input$measure, DB$ACS_ADS_global$ADS, permOut)
-      #   print("glocal pADS finished")
-      #   DB$ACS_ADS_global <- ACS_ADS_global
-      #   save(ACS_ADS_global, file="ACS_ADS_global.RData")
-      #   print("global ACS/ADS saved")
-      #   
-      #   setwd(path_old)
-      #   
-      #   ## multiple comparison
-      # }else if(DB$compType == "multiple"){
-      #   
-      #   ## multiple global 
-      #   path_old <- getwd()
-      #   setwd(DB.load.working.dir(db))
-      #   ACS_ADS_global <- multi_ACS_ADS_global(DB$MergedDB, DB$MergedStudyNames,
-      #                                          measure=input$measure, B=input$permNumGlobal)
-      #   save(ACS_ADS_global, file="ACS_ADS_global.RData")
-      #   DB$ACS_ADS_global <- ACS_ADS_global
-      #   print("ACS_ADS_global saved")
-      #   
-      #   load("ACS_ADS_global.RData")
-      #   DB$ACS_ADS_global <- ACS_ADS_global
-      #   setwd(path_old)
-      # }else{
-      #   stop("At least one study is needed in each species")
-      # }
+      save(fit, file="bn.RData")
+      print("Bayesian Network saved as 'bn.RData'.")
       
       # output  global ACS/ADS
-      output$globalACS_ADSTable <- DT::renderDataTable({
-        if (is.null(DB$ACS_ADS_global$ACS)){
-          data.frame(NULL)
-        }else{
-          if(length(DB$ACS_ADS_global$ACS)==1){
-            res <- matrix(1, length(DB$MergedDB), 
-                          length(DB$MergedDB))
-            colnames(res) <- rownames(res) <- DB$MergedStudyNames
-            res[1,2] <- paste(round(DB$ACS_ADS_global$ACS,3), " (p-val= ", 
-                              round(DB$ACS_ADS_global$ACSpvalue,3), ")", sep="")
-            res[2,1] <- paste(round(DB$ACS_ADS_global$ADS,3), " (p-val= ", 
-                              round(DB$ACS_ADS_global$ADSpvalue,3), ")", sep="")
-            res
-            print(res)
-          }else{
-            res <- DB$ACS_ADS_global$ACS
-            for(i in 1:nrow(res)){
-              for(j in 1:ncol(res)){
-                if(j>=i){
-                  res[i,j] <- paste(
-                    round(DB$ACS_ADS_global$ACS[i,j],3), 
-                    " (pval=", 
-                    round(DB$ACS_ADS_global$ACSpvalue[i,j],3), ")", sep="")
-                }
-                else{
-                  res[i,j] <- paste(
-                    round(DB$ACS_ADS_global$ADS[i,j],3), 
-                    " (pval=", 
-                    round(DB$ACS_ADS_global$ADSpvalue[i,j],3), ")", sep="")
-                }
-              }
-            }
-            res
-          }
-        }
-      })
-      sendSuccessMessage(session, "Genome-wide c-scores & d-scores are saved as 'ACS_ADS_global'.")
+      output$globalACS_ADSTable <- renderImage({
+        outfile <- tempfile(fileext = '.png')
+        png(outfile, width = 800, height = 600)
+        
+        plot(graph_from_adjacency_matrix(fit$adj), mode = "directed")
+        dev.off()
+        
+        # Return a list containing the filename
+        list(src = outfile,
+             contentType = 'image/png',
+             width = 800,
+             height = 600,
+             alt = "This is alternate text")
+      }, deleteFile = TRUE)
+      
+      sendSuccessMessage(session, "Bayesian Network generated.")
     }, session)
+    
     setwd(path_old)
     done(session)
   })
@@ -203,7 +77,6 @@ saved_data_server <- function(input, output, session) {
       library(utils)
       
       output$globalMdsFig <- renderImage({
-        # This file will be removed later by renderImage
         # A temp file to save the output.
         # This file will be removed later by renderImage
         outfile <- tempfile(fileext = '.png')

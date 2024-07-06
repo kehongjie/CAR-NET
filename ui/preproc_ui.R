@@ -9,6 +9,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
         # Upload Data 
         ##########################
         h2("Upload Data"),
+        p("Note: It is assumed that the uploaded data will have RNA/genes on the rows, and samples on the columns."),
         
         h3("ncRNA Expression Data"),
         p("All lncRNA names/IDs will be converted to LNCipedia format."),
@@ -31,7 +32,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                      max = 1,
                      step = 0.1
         ),
-        p("Filter for columns whose average value is greater than this threshold."),
+        p("Filter for rows whose average value is greater than this threshold."),
         
         fileInput(ns("ncRNA_file"), 'Upload ncRNA expression data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
@@ -50,7 +51,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                      max = 1,
                      step = 0.1
         ),
-        p("Filter for columns whose average value is greater than this threshold."),
+        p("Filter for rows whose average value is greater than this threshold."),
         
         fileInput(ns("gene_file"), 'Upload gene expression data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 

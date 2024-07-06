@@ -31,9 +31,6 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 # if (!("preproc" %in% installed)) {
 #   devtools::install_github("metaOmic/preproc")
 # }
-if(!("CAMO" %in% installed)){
-  stop("Please install CAMO R package first")
-}
 
 # library(preproc)
 library(shiny)
@@ -56,8 +53,7 @@ library(ggrepel)
 # library(ConsensusClusterPlus)
 # library(biomaRt)
 # library(KEGG.db)
-library(KEGGREST)
-library(KEGGgraph)
+
 # library(org.Hs.eg.db)
 # library(pathview)
 # library(cluster)
@@ -93,7 +89,7 @@ if(!py_module_available("pandas")) {
 fh <- import("pandas")
 
 ###############
-library(CAMO)  # main pkg
+# library(CAMO)  # main pkg
 
 #Include all global functions
 dir <- "global"

@@ -4,20 +4,12 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
            sidebarLayout(
              sidebarPanel(
                h2("Bayesian Network Generation"),
-               h3("Stage 1: Screening"),
-               # numericInput(ns("permNumGlobal"),
-               #              label = "Number of permutations",
-               #              value = 100),
+               h3("Stage 1/2: Screening and Score-based MCMC"),
 
-               actionButton(ns('ACS_ADS'), 'Run Stage 1',
+               actionButton(ns('ACS_ADS'), 'Run Stage',
                             class="btn-success",icon = icon("play")),
 
                hr(),
-               h3("Stage 2: Score-based MCMC"),
-               actionButton(ns("plotGlobalMDS"),
-                            'Run Stage 2',
-                            class="btn-success",
-                            icon = icon("play")),
                tags$hr(),
                
                h2("Module Detection and Downstream Analysis"),
@@ -32,8 +24,10 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
 
              ),
              mainPanel(
-                      h3("Directed Acyclic Graph of RNA-gene relationships"),
-                      plotOutput(ns("globalMdsFig"))
+              tabsetPanel(tabPanel(h3("Inital Bayesian Network"),
+                               plotOutput(ns("globalACS_ADSTable"))),
+                            tabPanel(h3("Directed Acyclic Graph of RNA-gene relationships"),
+                               plotOutput(ns("globalMdsFig"))))
              )
            )
   )
