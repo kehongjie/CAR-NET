@@ -233,4 +233,12 @@ preproc_server <- function(input, output, session) {
       return(NULL)
     }
   }, label="clinical file upload")
+  
+  vals <- reactiveValues()
+  observe({vals$file1 <- input$ncRNA_file})
+  observe({vals$file2 <- input$gene_file})
+  observe({vals$cutoff_ncRNA <- input$cutoff_ncRNA})
+  observe({vals$cutoff_gene <- input$cutoff_gene})
+  
+  return(vals)
 }

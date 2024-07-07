@@ -4,8 +4,8 @@ shinyServer(function(input, output, session) {
   installed=installed.packages()[,"Package"]
 
   callModule(setting_server, "setting")
-  callModule(preproc_server, "preproc")
-  callModule(saved_data_server, "saved_data")
+  ImProxy <- callModule(preproc_server, "preproc")
+  callModule(saved_data_server, "saved_data", ImProxy)
   #callModule(analysis_server, "analysis")
   callModule(pathway_server, "pathway")
   callModule(indPathway_server, "indPathway")
