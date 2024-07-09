@@ -23,6 +23,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
   adj_mat <- reactiveVal(value = NULL)
   p <- reactiveVal()
   q <- reactiveVal()
+  size <- reactiveVal()
   
   # Bayesian Network Generation
   source("./bn_main.R")
@@ -33,21 +34,21 @@ saved_data_server <- function(input, output, session, ImProxy) {
     wait(session, "Generating Bayesian Network, may take a while")
     path_old <- getwd()
     try({
-      # filePath <- ImProxy$file1
-      # fileText <- read.csv(filePath$datapath, check.names = FALSE)
-      # df <- t(fileText)
-      # colnames(df) <- df[1,]
-      # df <- df[-1,]
-      # df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-      # X <- as.matrix(internal_filter(df, ImProxy$cutoff_ncRNA)[1][[1]])
-      # # 
-      # filePath2 <- ImProxy$file2
-      # fileText2 <- read.csv(filePath2$datapath, check.names = FALSE)
-      # df <- t(fileText2)
-      # colnames(df) <- df[1,]
-      # df <- df[-1,]
-      # df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-      # Y <- as.matrix(internal_filter(df, ImProxy$cutoff_gene)[1][[1]])
+      filePath <- ImProxy$file1
+      fileText <- read.csv(filePath$datapath, check.names = FALSE)
+      df <- t(fileText)
+      colnames(df) <- df[1,]
+      df <- df[-1,]
+      df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+      X <- as.matrix(internal_filter(df, ImProxy$cutoff_ncRNA)[1][[1]])
+      #
+      filePath2 <- ImProxy$file2
+      fileText2 <- read.csv(filePath2$datapath, check.names = FALSE)
+      df <- t(fileText2)
+      colnames(df) <- df[1,]
+      df <- df[-1,]
+      df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+      Y <- as.matrix(internal_filter(df, ImProxy$cutoff_gene)[1][[1]])
       
       # x <- read.csv("./data/TCGA_KIRP_early_lncRNA_top5per.csv", header=T)
       # rownames(x) <- x[,1]
@@ -142,9 +143,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
     try({
       library(utils)
       
-      result <- partition_matrix_blocks(adj_mat(), 235)
+      size(235)
+      result <- partition_matrix_blocks(adj_mat(), size())
       
-      l <- as.list(seq(1,4))
+      l <- as.list(seq(1,2*(p()+q())/size()))
       observe({
         updateSelectInput(session, "measure",
                           label = "Select a module",
@@ -156,7 +158,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
         # A temp file to save the output.
         # This file will be removed later by renderImage
         outfile <- tempfile(fileext = '.png')
-        
         # Generate the PNG
         png(outfile, width = 800, height = 600)
         # p=6 # determine how many ncRNA in the matrix first # first 6 rows
@@ -165,10 +166,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
         #               ncRNA_num=p(),
         #               single_graph_name="./plots/modulex.png") # call your visualization function
         # plot(graph_from_adjacency_matrix(result[[1]]), mode = "directed")
-        total <- 235
+        total <- size()
         single_igraph(adj_single=result[[as.numeric(input$measure)]],
                       prob_single=matrix(0.5, total, total), 
-                      ncRNA_num=p(),
+                      ncRNA_num=p()/2,
                       single_graph_name="./plots/test_all.png")
         dev.off()
         
@@ -195,7 +196,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
       wait(session, "Generating Graphs")
       
       try({
-        partitions <- partition_matrix_blocks(adj_mat(), 235)
+        partitions <- partition_matrix_blocks(adj_mat(), size())
         output$globalMdsFig <- renderImage({
           # A temp file to save the output.
           # This file will be removed later by renderImage
@@ -203,10 +204,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
           # Generate the PNG
           png(outfile, width = 800, height = 600)
           # plot(graph_from_adjacency_matrix(partitions[[as.numeric(input$measure)]]), mode = "directed")
-          total <- 235
+          total <- size()
           single_igraph(adj_single=partitions[[as.numeric(input$measure)]],
                         prob_single=matrix(0.5, total, total), 
-                        ncRNA_num=p(),
+                        ncRNA_num=p()/2,
                         single_graph_name="./plots/test_all.png")
           dev.off()
     

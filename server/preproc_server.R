@@ -51,7 +51,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$ENSG) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -62,7 +62,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$HSAL) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -73,7 +73,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$HGNC) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -108,7 +108,7 @@ preproc_server <- function(input, output, session) {
             if (gene %in% ref$Ensembl_gene_ID) {
               ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
             } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
+              ENSG_ids <- c(ENSG_ids, gene)
             }
           }
           colnames(df) <- ENSG_ids
@@ -150,7 +150,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$ENSG) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -161,7 +161,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$HSAL) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -172,7 +172,7 @@ preproc_server <- function(input, output, session) {
               if (gene %in% ref$HGNC) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
               } else {
-                ENSG_ids <- c(ENSG_ids, "N/A")
+                ENSG_ids <- c(ENSG_ids, gene)
               }
             }
             colnames(df) <- ENSG_ids
@@ -208,7 +208,7 @@ preproc_server <- function(input, output, session) {
             if (gene %in% ref$Ensembl_gene_ID) {
               ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
             } else {
-              ENSG_ids <- c(ENSG_ids, "N/A")
+              ENSG_ids <- c(ENSG_ids, gene)
             }
           }
           colnames(df) <- ENSG_ids

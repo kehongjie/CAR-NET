@@ -4,14 +4,14 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
            sidebarLayout(
              sidebarPanel(
                h2("Bayesian Network Generation"),
-               h3("Stage 1:"),
+               h3("Part A:"),
                h4("Screening and Score-based MCMC"),
 
                actionButton(ns('ACS_ADS'), 'Generate Bayesian Network',
                             class="btn-success",icon = icon("play")),
                hr(),
                
-               h3("Stage 2:"),
+               h3("Part B:"),
                h4("Module Detection and Downstream Analysis"),
                
                actionButton(ns("plotGlobalMDS"),
