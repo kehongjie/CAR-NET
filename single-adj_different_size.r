@@ -102,12 +102,11 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   
   setwd(save_graph_location)
   # Plot graph from adj_early with edge colors based on combined_adjacency
-  tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150) 
+  # tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150) 
   plot(g_single, vertex.color = node_color, vertex.shape = node_shape, 
        vertex.label.color = "black", layout = layout_with_kk, edge.arrow.size = edge.arrow.size, 
        edge.color = ecolor_single, edge.width = edge.width_num*ewidth_single, vertex.size = vertex.size,vertex.label.cex = vertex.label.cex) 
-  dev.off()
-  
+  # dev.off()
 }
 
 ######################################################################
@@ -116,38 +115,38 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
 
 
 ## example: 0-45
-p <- 10
-q <- 25
-adj <- adj.generator(p=p, q=q, l1=12, l2=15)
-sum(adj) # check number of edges 
-sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
-sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
-
-single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
-                         ncRNA_num=p,
-                         single_graph_name="single_edge_color_graph_0613_0-45.jpeg") # call your visulaization function
-
-## example: 46-75
-p <- 30
-q <- 40
-adj <- adj.generator(p=p, q=q, l1=35, l2=20)
-sum(adj) # check number of edges 
-sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
-sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
-
-single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
-                         ncRNA_num=p,
-                         single_graph_name="single_edge_color_graph_0613_46-75.jpeg") # call your visulaization function
-
-
-## example: 76 and above
-p <- 40
-q <- 40
-adj <- adj.generator(p=p, q=q, l1=45, l2=45)
-sum(adj) # check number of edges 
-sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
-sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
-
-single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
-                            ncRNA_num=p,
-                            single_graph_name="single_edge_color_graph_0613_76-above.jpeg") # call your visulaization function
+# p <- 10
+# q <- 25
+# adj <- adj.generator(p=p, q=q, l1=12, l2=15)
+# sum(adj) # check number of edges 
+# sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
+# sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
+# 
+# single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
+#                          ncRNA_num=p,
+#                          single_graph_name="single_edge_color_graph_0613_0-45.jpeg") # call your visulaization function
+# 
+# ## example: 46-75
+# p <- 30
+# q <- 40
+# adj <- adj.generator(p=p, q=q, l1=35, l2=20)
+# sum(adj) # check number of edges 
+# sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
+# sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
+# 
+# single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
+#                          ncRNA_num=p,
+#                          single_graph_name="single_edge_color_graph_0613_46-75.jpeg") # call your visulaization function
+# 
+# 
+# ## example: 76 and above
+# p <- 40
+# q <- 40
+# adj <- adj.generator(p=p, q=q, l1=45, l2=45)
+# sum(adj) # check number of edges 
+# sum(adj[1:p, (p+1):(p+q)]) # check number of level-1 edges
+# sum(adj[(p+1):(p+q), (p+1):(p+q)]) # check number of level-2 edges
+# 
+# single_igraph(adj_single=adj, prob_single=matrix(0.5, p+q, p+q), 
+#                             ncRNA_num=p,
+#                             single_graph_name="single_edge_color_graph_0613_76-above.jpeg") # call your visulaization function

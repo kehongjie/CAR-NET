@@ -29,8 +29,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
         numericInput(ns("cutoff_ncRNA"), label = "Filter Cutoff for ncRNA",
                      value = 0,
                      min = 0,
-                     max = 1,
-                     step = 0.1
+                     step = 1
         ),
         p("Filter for rows whose average value is greater than this threshold."),
         
@@ -48,8 +47,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
         numericInput(ns("cutoff_gene"), label = "Filter Cutoff for Gene",
                      value = 0,
                      min = 0,
-                     max = 1,
-                     step = 0.1
+                     step = 1
         ),
         p("Filter for rows whose average value is greater than this threshold."),
         

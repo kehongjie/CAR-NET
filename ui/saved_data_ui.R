@@ -4,30 +4,35 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
            sidebarLayout(
              sidebarPanel(
                h2("Bayesian Network Generation"),
-               h3("Stage 1/2: Screening and Score-based MCMC"),
+               h3("Stage 1:"),
+               h4("Screening and Score-based MCMC"),
 
-               actionButton(ns('ACS_ADS'), 'Run Stage',
+               actionButton(ns('ACS_ADS'), 'Generate Bayesian Network',
                             class="btn-success",icon = icon("play")),
-
                hr(),
-               tags$hr(),
                
-               h2("Module Detection and Downstream Analysis"),
+               h3("Stage 2:"),
+               h4("Module Detection and Downstream Analysis"),
+               
                actionButton(ns("plotGlobalMDS"),
                             'Divide into modules',
                             class="btn-success",
                             icon = icon("play")),
-               selectInput(ns("measure"), label = "Select a module",
-                           choices = list("Module 1" = "Fmeasure",
-                                          "Module 2" = "youden",
-                                          "Module 3" = "geo.mean"))
+               hr(),
+               
+               selectInput(ns("measure"), label = "Please Generate the Modules First",
+                           choices = c(1))
 
              ),
              mainPanel(
-              tabsetPanel(tabPanel(h3("Inital Bayesian Network"),
-                               plotOutput(ns("globalACS_ADSTable"))),
-                            tabPanel(h3("Directed Acyclic Graph of RNA-gene relationships"),
-                               plotOutput(ns("globalMdsFig"))))
+               tabsetPanel(id = "tabSelect",
+                 tabPanel(value = "panel1",
+                     h3("Inital Bayesian Network"),
+                     plotOutput(ns("globalACS_ADSTable"))),
+                 tabPanel(value = "panel2",
+                     h3("Individual Modules"),
+                     plotOutput(ns("globalMdsFig")))
+               )
              )
            )
   )
