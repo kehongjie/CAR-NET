@@ -148,7 +148,11 @@ bn.main <- function(X, Y, alpha=1e-5) {
               tmp, " genes"))
   
   
-  return(list(fit=fit_our, adj=dag_our, post.prob=post_prob))
+  return(list(fit=fit_our, adj=dag_our, post.prob=post_prob, s1_lvl1 = sum(adj_xy),
+              s1_lvl2 = sum(adj_yy)/2, s1_rna = p1, s1_gene = q1,
+              s2_lvl1 = sum(dag_our[1:p,(p+1):(p+q)]),
+              s2_lvl2 = sum(dag_our[(p+1):(p+q), (p+1):(p+q)]), 
+              s2_rna = sum(rowSums(dag_our[1:p,])>0), s2_gene = tmp))
 }
 
 

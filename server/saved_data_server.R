@@ -61,12 +61,23 @@ saved_data_server <- function(input, output, session, ImProxy) {
       # Y <- t(y)
       # Y <- as.matrix(internal_filter(Y, 11)[1][[1]])
 
-      # fit <- bn.main(X=X, Y=Y, alpha=1e-5)
-      load("./bn.RData")
+      fit <- bn.main(X=X, Y=Y, alpha=1e-5)
+      # load("./bn.RData")
       adj_mat(fit$adj)
       
-      # save(fit, file="bn.RData")
-      # print("Bayesian Network saved as 'bn.RData'.")
+      save(fit, file="bn.RData")
+      print("Bayesian Network saved as 'bn.RData'.")
+      
+      output$text <- renderText({ paste("After Stage 1:\n",
+        "Left with ", fit$s1_lvl1, " level-1 edges\n",
+        "Left with ", fit$s1_lvl2, " level-2 edges\n",
+        "Involving ", fit$s1_rna, " ncRNAs and ", fit$s1_gene, "genes\n",
+        "After Stage 2:\n",
+        "Left with ", fit$s2_lvl1, " level-1 edges\n", 
+        "Left with ", fit$s2_lvl2, " level-2 edges\n",
+        "Involving ", fit$s2_rna, " ncRNAs and ", fit$s2_gene, " genes", sep="") })
+      
+      small <- fit$adj[rowSums(fit$adj) > 0, colSums(fit$adj) > 0]
       
       # output  global ACS/ADS
       output$globalACS_ADSTable <- renderImage({
@@ -74,10 +85,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
         png(outfile, width = 800, height = 600)
         
         # plot(graph_from_adjacency_matrix(result[[1]]), mode = "directed")
-        # p(ncol(X))
-        # q(ncol(Y))
-        p(108)
-        q(462)
+        p(ncol(X))
+        q(ncol(Y))
+        # p(108)
+        # q(462)
         total <- p() + q()
         single_igraph(adj_single=fit$adj, prob_single=matrix(0.5, total, total), 
                       ncRNA_num=p(),
