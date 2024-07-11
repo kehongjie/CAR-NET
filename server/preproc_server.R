@@ -5,6 +5,8 @@ preproc_server <- function(input, output, session) {
   # Reactive Values        #
   ##########################
   DB   <- reactiveValues(names=DB.ls(db))
+  names_rna <- reactiveVal()
+  names_gene <- reactiveVal()
 
   ##########################
   # Observers              #
@@ -39,14 +41,17 @@ preproc_server <- function(input, output, session) {
         df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
         
         genes <- colnames(df)
+        names_rna(genes)
         
         val <- ncRNA_name()
         val2 <- RNA_type()
         
         if (val2 == 2) {
-          if (val == 1) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_lnci.csv")
-            ENSG_ids <- c()
+          ENSG_ids <- c()
+          if (val == 0) {
+            ENSG_ids <- colnames(df)
+          } else if (val == 1) {
+            ref <- read.csv("./data/reference/ENSG_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$ENSG) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
@@ -54,10 +59,8 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           } else if (val == 2) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HSAL_lnci.csv")
-            ENSG_ids <- c()
+            ref <- read.csv("./data/reference/HSAL_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$HSAL) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
@@ -65,10 +68,8 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           } else if (val == 3) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HGNC_lnci.csv")
-            ENSG_ids <- c()
+            ref <- read.csv("./data/reference/HGNC_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$HGNC) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
@@ -76,8 +77,9 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           }
+          colnames(df) <- ENSG_ids
+          names_rna(ENSG_ids)
         }
         
         t(df)
@@ -101,6 +103,7 @@ preproc_server <- function(input, output, session) {
         
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
+        names_gene(genes)
         
         if (gene_name() == 1) {
           ENSG_ids <- c()
@@ -112,6 +115,7 @@ preproc_server <- function(input, output, session) {
             }
           }
           colnames(df) <- ENSG_ids
+          names_gene(ENSG_ids)
         }
         
         t(df)
@@ -137,15 +141,18 @@ preproc_server <- function(input, output, session) {
         df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
         
         genes <- colnames(df)
+        names_rna(genes)
         val <- isolate(input$name_ncRNA)
         ncRNA_name(val)
         val2 <- isolate(input$RNA_type)
         RNA_type(val2)
         
         if (val2 == 2) {
-          if (val == 1) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_lnci.csv")
-            ENSG_ids <- c()
+          ENSG_ids <- c()
+          if (val == 0) {
+            ENSG_ids <- colnames(df)
+          } else if (val == 1) {
+            ref <- read.csv("./data/reference/ENSG_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$ENSG) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
@@ -153,10 +160,8 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           } else if (val == 2) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HSAL_lnci.csv")
-            ENSG_ids <- c()
+            ref <- read.csv("./data/reference/HSAL_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$HSAL) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
@@ -164,10 +169,8 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           } else if (val == 3) {
-            ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/HGNC_lnci.csv")
-            ENSG_ids <- c()
+            ref <- read.csv("./data/reference/HGNC_lnci.csv")
             for (gene in genes) {
               if (gene %in% ref$HGNC) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
@@ -175,8 +178,9 @@ preproc_server <- function(input, output, session) {
                 ENSG_ids <- c(ENSG_ids, gene)
               }
             }
-            colnames(df) <- ENSG_ids
           }
+          colnames(df) <- ENSG_ids
+          names_rna(ENSG_ids)
         }
         
         t(df)
@@ -201,6 +205,7 @@ preproc_server <- function(input, output, session) {
         ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
         gene_name(isolate(input$name_gene))
+        names_gene(genes)
         
         if (isolate(input$name_gene) == 1) {
           ENSG_ids <- c()
@@ -212,6 +217,7 @@ preproc_server <- function(input, output, session) {
             }
           }
           colnames(df) <- ENSG_ids
+          names_gene(ENSG_ids)
         }
         
         t(df)
@@ -239,6 +245,8 @@ preproc_server <- function(input, output, session) {
   observe({vals$file2 <- input$gene_file})
   observe({vals$cutoff_ncRNA <- input$cutoff_ncRNA})
   observe({vals$cutoff_gene <- input$cutoff_gene})
+  observe({vals$names_rna <- names_rna()})
+  observe({vals$names_gene <- names_gene()})
   
   return(vals)
 }

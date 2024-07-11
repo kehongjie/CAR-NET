@@ -2,9 +2,9 @@ library(EnvStats)
 library(stringr)
 
 #####reference databases
-gene_transcript_0 = read.csv("ENSG_lnci.csv")[,-1]
-HSAL_ENSG_lnci = read.csv("HSAL_lnci.csv")[,-1]
-HGNC_ENSG_lnci = read.csv("HGNC_lnci.csv")[,-1]
+gene_transcript_0 = read.csv("./data/reference/ENSG_lnci.csv")[,-1]
+HSAL_ENSG_lnci = read.csv("./data/reference/HSAL_lnci.csv")[,-1]
+HGNC_ENSG_lnci = read.csv("./data/reference/HGNC_lnci.csv")[,-1]
 
 ##########internal map functions:
 #function: ENSG/ENST(without extension) to lncipedia ID
@@ -75,7 +75,7 @@ fcn_reduce = function(counts, convert_ID){
 # drop: if you want to drop lncRNA with no lncipedia name; otherwise the original names keep remained
 # reduce: if you want to reduce the lncRNA to the one with the largest IQR when there is more than one original names corresponds to
 # a single same lncipedia name
-# output: a new matrix with lncipedia name and index for the dropped genes or redcued genes in the original dataset
+# output: a new matrix with lncipedia name and index for the dropped genes or reduced genes in the original dataset
 name_convert_ncrna = function(M, type, drop = FALSE, reduce = FALSE){
   # M = ncrna
   # type = "HSALN"

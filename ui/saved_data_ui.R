@@ -23,7 +23,9 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                             'B1: Divide into modules',
                             class="btn-success",
                             icon = icon("play")),
-               h3(),
+               # h3(),
+               selectInput(ns("measure"), label = "Select a Module",
+                           choices = c(1)),
                actionButton(ns("pathway"),
                             'B2: Pathway Analysis',
                             class="btn-success",
@@ -34,9 +36,6 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                             class="btn-success",
                             icon = icon("play")),
                hr(),
-               
-               selectInput(ns("measure"), label = "Select a Module",
-                           choices = c(1))
 
              ),
              mainPanel(

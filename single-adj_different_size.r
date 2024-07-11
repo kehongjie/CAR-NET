@@ -88,8 +88,8 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   
   ## output is based on the size of the matrix
   n <- nrow(adj_single)
-  edge.arrow.size <- ifelse(n <=45,1,
-                            ifelse(n>45 & n<=75, 0.5,
+  edge.arrow.size <- ifelse(n <=10,1,
+                            ifelse(n>10 & n<=75, 0.5,
                                    ifelse(n>75, 0.4,0.2)))
   edge.width_num <- ifelse(n <=45,4,
                            ifelse(n>45 , 2, 1))
@@ -103,7 +103,7 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   setwd(save_graph_location)
   # Plot graph from adj_early with edge colors based on combined_adjacency
   # tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150) 
-  plot(g_single, vertex.color = node_color, vertex.shape = node_shape, 
+  plot(g_single, vertex.color = node_color, vertex.shape = node_shape, layout = layout_with_fr(g_single),
        vertex.label.color = "black", layout = layout_with_kk, edge.arrow.size = edge.arrow.size, 
        edge.color = ecolor_single, edge.width = edge.width_num*ewidth_single, vertex.size = vertex.size,vertex.label.cex = vertex.label.cex) 
   # dev.off()
