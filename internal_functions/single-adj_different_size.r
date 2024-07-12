@@ -102,10 +102,13 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   
   setwd(save_graph_location)
   # Plot graph from adj_early with edge colors based on combined_adjacency
-  # tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150) 
+  # tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150)
   plot(g_single, vertex.color = node_color, vertex.shape = node_shape, layout = layout_with_fr(g_single),
        vertex.label.color = "black", layout = layout_with_kk, edge.arrow.size = edge.arrow.size, 
        edge.color = ecolor_single, edge.width = edge.width_num*ewidth_single, vertex.size = vertex.size,vertex.label.cex = vertex.label.cex) 
+  f <- factor(levels = c("ncRNA Node", "gene Node", "gene to gene", "ncRNA to gene"), ordered = TRUE)
+  vcols <- c("pink", "slategray1", "tan1", "darkgray")
+  legend("topleft", legend = levels(f), pch = 16, col = vcols, bty = "n")
   # dev.off()
 }
 

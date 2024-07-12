@@ -99,6 +99,7 @@ name_convert_ncrna = function(M, type, drop = FALSE, reduce = FALSE){
       lnci_name[i] = map_ID_3_0(ori_name[i])
     }
   }
+  print(sum(is.na(lnci_name)))
   if(drop == FALSE && reduce == FALSE){
     new_M = M
     colnames(new_M) = lnci_name
@@ -136,22 +137,24 @@ name_convert_ncrna = function(M, type, drop = FALSE, reduce = FALSE){
 
 #######test
 #KICH dataset
-d1 <- read.table("TCGA-KICH-rnaexpr.tsv",
-                 header=T, sep="\t")
-KICH = d1
-test_df = as.matrix(t(KICH)[-1,])
+x <- read.csv("./data/TCGA_KIRP_early_lncRNA_top5per.csv", header=T)
+rownames(x) <- x[,1]
+x <- x[,-1]
+X <- t(x)
+KICH = X
+test_df = as.matrix(KICH)
 colnames(test_df) = KICH[,1]
-lnci_KICH = name_convert(test_df, "ENSG/ENST", TRUE, FALSE)
-length(lnci_KICH[[1]])
+lnci_KICH = name_convert_ncrna(test_df, "ENSG/ENST", TRUE, FALSE)
+dim(lnci_KICH[[1]])
 #covid dataset
-d4 <- read.table("SRP253951FeatureCounts_Matirx.tsv",
-                 header=T, sep="\t")
-covid = d4
-test_df = as.matrix(t(covid)[-1,])
-colnames(test_df) = covid[,1]
-lnci_covid = name_convert(test_df, "HSALN", TRUE, TRUE)
-length(lnci_covid[[1]])
-length(grep("HSALN", covid[,1]))
+# d4 <- read.table("SRP253951FeatureCounts_Matirx.tsv",
+#                  header=T, sep="\t")
+# covid = d4
+# test_df = as.matrix(t(covid)[-1,])
+# colnames(test_df) = covid[,1]
+# lnci_covid = name_convert(test_df, "HSALN", TRUE, TRUE)
+# length(lnci_covid[[1]])
+# length(grep("HSALN", covid[,1]))
 #HGNC dataset
 
 

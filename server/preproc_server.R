@@ -1,16 +1,22 @@
 preproc_server <- function(input, output, session) {
 
   ns <- NS("preproc")
+  
   ##########################
   # Reactive Values        #
   ##########################
   DB   <- reactiveValues(names=DB.ls(db))
-  names_rna <- reactiveVal()
-  names_gene <- reactiveVal()
+  names_rna <- reactiveVal()  # final list of lncRNA lncipedia symbols
+  names_gene <- reactiveVal() # final list of gene HGNC symbols
+  ncRNA_name <- reactiveVal() # naming format of original lncRNA data
+  RNA_type <- reactiveVal()   # type of original RNA data (micro or long non-coding)
+  gene_name <- reactiveVal()  # naming format of original gene data
 
+  
   ##########################
   # Observers              #
   ##########################
+  
   # watch for tab change, get the newest list of all data
   observeEvent(input$tabChange, {DB$names <- DB.ls(db)}, 
                label="tab change")
@@ -24,9 +30,6 @@ preproc_server <- function(input, output, session) {
   
   ######################################
   # FILTER SELECTION
-  ncRNA_name <- reactiveVal()
-  RNA_type <- reactiveVal()
-  gene_name <- reactiveVal()
   
   # watch for filter selection for ncRNA
   observeEvent(input$cutoff_ncRNA, {
@@ -124,6 +127,7 @@ preproc_server <- function(input, output, session) {
       return(NULL)
     }
   }, label="Filter Cutoff for ncRNA")
+  
   
   ######################################
   # FILE UPLOAD
@@ -240,6 +244,7 @@ preproc_server <- function(input, output, session) {
     }
   }, label="clinical file upload")
   
+  # Values to be read by saved_data_server.R
   vals <- reactiveValues()
   observe({vals$file1 <- input$ncRNA_file})
   observe({vals$file2 <- input$gene_file})

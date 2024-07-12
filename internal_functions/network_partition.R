@@ -27,7 +27,17 @@ partition <- function(adj, mat_post, p1) {
   grp_idx <- as.numeric(names(sort(table(fit_lou$membership), 
                                    decreasing = T))) ## group name in descending order
   grp_idx <- grp_idx[as.numeric(sort(table(fit_lou$membership), 
-                                     decreasing = T))>=10] ## only keep modules with size larger than 10
+                                     decreasing = T))>=5] ## only keep modules with size larger than 10
+  
+  # for (idx in grp_idx) {
+  #   adj_single <- result$adj[which(result$fit==idx), which(result$fit==idx)]
+  #   prob_single <- result$mat_post[which(result$fit==idx), which(result$fit==idx)]
+  #   a1 <- length(intersect(which(result$fit==idx), 1:result$p)) ## number of ncRNAs in this module
+  #   
+  #   ## NOTE: modify the visualization function accordingly
+  #   single_igraph(adj_single=adj_single, prob_single=prob_single, ncRNA_num=a1, 
+  #                 single_graph_name="modify_the_graph_name.jpeg")
+  # }
   
   return(list(adj=adj, mat_post=mat_post, fit=fit_lou$membership, p=p1, grp_idx=grp_idx))
 }

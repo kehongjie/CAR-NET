@@ -2,7 +2,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
   
   ns <- NS("saved_data")
   
-  
   ##########################
   # Reactive Values        #
   ##########################
@@ -14,22 +13,20 @@ saved_data_server <- function(input, output, session, ImProxy) {
     ACS_ADS_global=NULL,
     ACS_ADS_pathway=NULL
   )
+  adj_mat <- reactiveVal(value = NULL)  # final adjacency matrix
+  post_prob <- reactiveVal()  # posterior probability matrix
+  p <- reactiveVal()  # number of ncRNA
+  q <- reactiveVal()  # number of genes
   
   
   ##########################
   # Observers              #
   ##########################
   
-  adj_mat <- reactiveVal(value = NULL)
-  p <- reactiveVal()
-  q <- reactiveVal()
-  size <- reactiveVal()
-  post_prob <- reactiveVal()
-  
   # Bayesian Network Generation
-  source("./bn_main.R")
-  source("./gui_filter.R")
-  source("./single-adj_different_size.r")
+  source("./internal_functions/bn_main.R")
+  source("./internal_functions/gui_filter.R")
+  source("./internal_functions/single-adj_different_size.r")
   
   observeEvent(input$ACS_ADS, {
     wait(session, "Generating Bayesian Network, may take a while")
@@ -118,7 +115,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
     done(session)
   })
   
-  source("./network_partition.R")
+  source("./internal_functions/network_partition.R")
   
   # partition_matrix_blocks <- function(adj_matrix, block_size) {
   #   # Number of nodes
@@ -157,7 +154,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
     wait(session, "Generating Modules")
     
     try({
-      size(235)
       pos_small <- (rowSums(adj_mat())>0 | colSums(adj_mat())>0)
       result <- partition(adj_mat(), post_prob()[pos_small, pos_small], p())
       
