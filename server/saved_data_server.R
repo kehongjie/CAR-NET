@@ -117,39 +117,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
   
   source("./internal_functions/network_partition.R")
   
-  # partition_matrix_blocks <- function(adj_matrix, block_size) {
-  #   # Number of nodes
-  #   n <- nrow(adj_matrix)
-  #   
-  #   # Calculate the number of blocks along one dimension
-  #   num_blocks <- ceiling(n / block_size)
-  #   
-  #   # Create a list to store the sub matrices
-  #   blocks <- vector("list", num_blocks^2)
-  #   
-  #   # Initialize the index for the list
-  #   index <- 1
-  #   
-  #   # Fill the submatrices
-  #   for (i in seq(1, n, by = block_size)) {
-  #     for (j in seq(1, n, by = block_size)) {
-  #       # Determine the rows and columns for the current block
-  #       row_indices <- i:min(i + block_size - 1, n)
-  #       col_indices <- j:min(j + block_size - 1, n)
-  #       
-  #       # Extract the submatrix
-  #       submatrix <- adj_matrix[row_indices, col_indices]
-  #       
-  #       # Store the submatrix in the list
-  #       blocks[[index]] <- submatrix
-  #       index <- index + 1
-  #     }
-  #   }
-  #   
-  #   # Return the list of submatrices
-  #   return(blocks)
-  # }
-  
   observeEvent(input$plotGlobalMDS, {
     wait(session, "Generating Modules")
     
@@ -186,7 +153,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
         ## Note that in the GUI drop-down of (module 1,2,3,...), we actually wants it to visualize
         ##    the largest, second-largest, third-largest modules, etc. It is NOT the "1" as 
         ##    in the fit_lou$membership. Something like:
-        idx <- 1
+        idx <- result$grp_idx[1]
         adj_single <- result$adj[which(result$fit==idx), which(result$fit==idx)]
         prob_single <- result$mat_post[which(result$fit==idx), which(result$fit==idx)]
         a1 <- length(intersect(which(result$fit==idx), 1:result$p)) ## number of ncRNAs in this module
@@ -229,7 +196,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
           # Generate the PNG
           png(outfile, width = 800, height = 600)
           # plot(graph_from_adjacency_matrix(partitions[[as.numeric(input$measure)]]), mode = "directed")
-          idx <- as.numeric(input$measure)
+          idx <- result$grp_idx[as.numeric(input$measure)]
           adj_single <- result$adj[which(result$fit==idx), which(result$fit==idx)]
           prob_single <- result$mat_post[which(result$fit==idx), which(result$fit==idx)]
           a1 <- length(intersect(which(result$fit==idx), 1:result$p)) ## number of ncRNAs in this module

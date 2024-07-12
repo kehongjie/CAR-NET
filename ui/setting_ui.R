@@ -20,13 +20,13 @@ blob/master/CAMO_turtorial.pdf",target="_blank")),
              p("Upload your data onto the Data Uploading and Preprocessing Page, and the corresponding output will serve as the input to the analysis page."),
              style="text-indent: 20px; font-size: 16px; margin-left: 20px"),
            img(src='flowchart.png',align="middle",width="1000"),
-           tags$hr(),
-    mainPanel(
-      h2("Session Information"),
-      verbatimTextOutput(ns("urlText")),
-      h2("Saving directory:", style="display:inline"),
-      helpIcon("working_dir_help", "During the computation, some output files or images are automatically saved to this directory."),
-      directoryInput(ns('directory'), label='select a directory')
-    )
+    #        tags$hr(),
+    # mainPanel(
+    #   h2("Session Information"),
+    #   verbatimTextOutput(ns("urlText")),
+    #   h2("Saving directory:", style="display:inline"),
+    #   helpIcon("working_dir_help", "During the computation, some output files or images are automatically saved to this directory."),
+    #   directoryInput(ns('directory'), label='select a directory')
+    # )
   )
 }
