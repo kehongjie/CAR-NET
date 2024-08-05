@@ -127,7 +127,7 @@ bn.main <- function(X, Y, alpha=1e-5) {
   
   ## Order-MCMC 
   fit_our <- sampleBN(score_data_sub, algorithm="order", startspace=mat_sp, alpha=alpha,
-                      plus1=F, hardlimit=K, iterations=500000) ## our idea (no plus 1)
+                      plus1=F, hardlimit=K, iterations=50000) ## our idea (no plus 1)
   
   ## get the DAG/adjacency matrix
   dag_our <- matrix(0, p+q, p+q)
