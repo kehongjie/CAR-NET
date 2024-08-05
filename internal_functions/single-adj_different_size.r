@@ -89,8 +89,8 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   ## output is based on the size of the matrix
   n <- nrow(adj_single)
   edge.arrow.size <- ifelse(n <=10,1,
-                            ifelse(n>10 & n<=75, 0.5,
-                                   ifelse(n>75, 0.4,0.2)))
+                            ifelse(n>10 & n<=40, 0.8,
+                                   ifelse(n>40 & n<=75, 0.5, 0.4)))
   edge.width_num <- ifelse(n <=45,4,
                            ifelse(n>45 , 2, 1))
   vertex.size <- ifelse(n <=45,12,
