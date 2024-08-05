@@ -104,7 +104,7 @@ preproc_server <- function(input, output, session) {
         df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
         df <- as.data.frame(internal_filter(df, input$cutoff_gene)[1], check.names = FALSE)
         
-        ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
+        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
         names_gene(genes)
         
@@ -206,7 +206,7 @@ preproc_server <- function(input, output, session) {
         df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
         df <- as.data.frame(internal_filter(df, input$cutoff_gene)[1], check.names = FALSE)
         
-        ref <- read.csv("C:/Users/xiaod/Downloads/Rshiny/NGRN_Rshiny/data/reference/ENSG_HGNC.csv")
+        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
         genes <- colnames(df)
         gene_name(isolate(input$name_gene))
         names_gene(genes)
