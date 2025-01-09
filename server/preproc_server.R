@@ -28,11 +28,21 @@ preproc_server <- function(input, output, session) {
     return(list(df[,!ind, drop = FALSE], ind))
   }
   
+  internal_filter_var <- function(M,fence){
+    # cutoff threshold: fence
+    df = M
+    gene_variances <- apply(df, 1, var)
+    variance_cutoff <- quantile(gene_variances, 1-fence) 
+    # quantiles of variance (keep the 20% genes with the highest variance)
+    df_filter <- df[gene_variances>variance_cutoff,]
+    return(df_filter)
+  }
+  
   ######################################
   # FILTER SELECTION
   
   # watch for filter selection for ncRNA
-  observeEvent(input$cutoff_ncRNA, {
+  observeEvent(input$mean, {
     if (!is.null(input$ncRNA_file)) {
       output$ncRNA_file <- DT::renderDataTable({
         filePath <- input$ncRNA_file
@@ -42,7 +52,6 @@ preproc_server <- function(input, output, session) {
         df <- df[-1,]
         df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
         df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
-        
         genes <- colnames(df)
         names_rna(genes)
         
@@ -84,7 +93,6 @@ preproc_server <- function(input, output, session) {
           colnames(df) <- ENSG_ids
           names_rna(ENSG_ids)
         }
-        
         t(df)
       })
     } else {
@@ -142,8 +150,7 @@ preproc_server <- function(input, output, session) {
         colnames(df) <- df[1,]
         df <- df[-1,]
         df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- as.data.frame(internal_filter(df, input$cutoff_ncRNA)[1], check.names = FALSE)
-        
+        df <- as.data.frame(internal_filter(df, input$mean)[1], check.names = FALSE)
         genes <- colnames(df)
         names_rna(genes)
         val <- isolate(input$name_ncRNA)
@@ -186,7 +193,6 @@ preproc_server <- function(input, output, session) {
           colnames(df) <- ENSG_ids
           names_rna(ENSG_ids)
         }
-        
         t(df)
       })
     } else {

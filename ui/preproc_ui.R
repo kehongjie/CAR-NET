@@ -44,48 +44,54 @@ preproc_ui <- function(id, label= "preprocessing data") {
 conditionalPanel(
   condition = "input['preproc-platform'] == 1",
 
-  radioButtons(ns("format"), label = "Select the naming format of your lncRNA data.",
-               choices = list("RPKM" = 0,
-                              "TPM" = 1, 
-                              "CPM" = 2),
-               selected = 0),
+  # radioButtons(ns("format"), label = "Select the naming format of your lncRNA data.",
+  #              choices = list("RPKM" = 0,
+  #                             "TPM" = 1, 
+  #                             "CPM" = 2),
+  #              selected = 0),
   
-  numericInput(ns("Variance"), label ="Set cutoff for variance quantile (%):",
+  numericInput(ns("Variance"), label ="Keep the ?% genes with the highest variance:",
               min = 0, max = 0, value = 0, step = 1),
   
-  conditionalPanel(
-    condition = "input['preproc-format'] == 0",  # RPKM selected
-    numericInput(ns("cutoff_RPKM"), label = "Set filtering cutoff for RPKM:",
-                 value = 0,
-                 min = 0,
-                 step = 1
-    ),
-  ),
-  conditionalPanel(
-    condition = "input['preproc-format'] == 1",  # TPM selected
-    numericInput(ns("cutoff_TPM"), label = "Set filtering cutoff for TPM:",
-                 value = 0,
-                 min = 0,
-                 step = 1
-    ),
-  ),
-  conditionalPanel(
-    condition = "input['preproc-format'] == 2",  # CPM selected
-  #   sliderInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
-  #               min = 10, max = 20, value = 10, step = 1)
-  # ),
-  numericInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
+  numericInput(ns("mean"), label = "Filter mean for ncRNA",
                value = 0,
                min = 0,
                step = 1
   ),
-),
+  
+  # conditionalPanel(
+  #   condition = "input['preproc-format'] == 0",  # RPKM selected
+  #   numericInput(ns("cutoff_RPKM"), label = "Set filtering cutoff for RPKM:",
+  #                value = 0,
+  #                min = 0,
+  #                step = 1
+  #   ),
+  # ),
+  # conditionalPanel(
+  #   condition = "input['preproc-format'] == 1",  # TPM selected
+  #   numericInput(ns("cutoff_TPM"), label = "Set filtering cutoff for TPM:",
+  #                value = 0,
+  #                min = 0,
+  #                step = 1
+  #   ),
+  # ),
+#   conditionalPanel(
+#     condition = "input['preproc-format'] == 2",  # CPM selected
+#   #   sliderInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
+#   #               min = 10, max = 20, value = 10, step = 1)
+#   # ),
+#   numericInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
+#                value = 0,
+#                min = 0,
+#                step = 1
+#   ),
+# ),
 ),
 
 # microarray fitlering criteria 
 conditionalPanel(
   condition = "input['preproc-platform'] == 2",
-  numericInput(ns("variance"), label = "Filter variance for ncRNA",
+  numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
                value = 0,
                min = 0,
                step = 1
@@ -106,7 +112,7 @@ conditionalPanel(
                min = 0,
                step = 1
   ),
-  numericInput(ns("variance"), label = "Filter variance for ncRNA",
+  numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
                value = 0,
                min = 0,
                step = 1
