@@ -50,25 +50,36 @@ conditionalPanel(
                               "CPM" = 2),
                selected = 0),
   
-  sliderInput(ns("Variance"), label ="Set filtering Variance for ncRNA:",
-              min = 0.1, max = 0.5, value = 0.1, step = 0.1),
+  numericInput(ns("Variance"), label ="Set cutoff for variance quantile (%):",
+              min = 0, max = 0, value = 0, step = 1),
   
-  # Conditional sliderInput for cutoff
   conditionalPanel(
     condition = "input['preproc-format'] == 0",  # RPKM selected
-    sliderInput(ns("cutoff_RPKM"), label ="Set filtering cutoff for RPKM:",
-                min = 0.5, max = 1, value = 0.5, step = 0.1)
+    numericInput(ns("cutoff_RPKM"), label = "Set filtering cutoff for RPKM:",
+                 value = 0,
+                 min = 0,
+                 step = 1
+    ),
   ),
   conditionalPanel(
     condition = "input['preproc-format'] == 1",  # TPM selected
-    sliderInput(ns("cutoff_TPM"), label = "Set filtering cutoff for TPM:",
-                min = 1, max = 5, value = 1, step = 0.5)
+    numericInput(ns("cutoff_TPM"), label = "Set filtering cutoff for TPM:",
+                 value = 0,
+                 min = 0,
+                 step = 1
+    ),
   ),
   conditionalPanel(
     condition = "input['preproc-format'] == 2",  # CPM selected
-    sliderInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
-                min = 10, max = 20, value = 10, step = 1)
+  #   sliderInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
+  #               min = 10, max = 20, value = 10, step = 1)
+  # ),
+  numericInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
+               value = 0,
+               min = 0,
+               step = 1
   ),
+),
 ),
 
 # microarray fitlering criteria 
