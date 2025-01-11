@@ -1,6 +1,5 @@
 preproc_ui <- function(id, label= "preprocessing data") {
   ns <- NS(id)
-
   tabPanel("Data Uploading and Preprocessing", value=id,
     sidebarLayout(
       sidebarPanel(
@@ -10,7 +9,8 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ##########################
         h2("Upload Data"),
         p("Note: It is assumed that the uploaded data will have RNA/genes on the rows, and samples on the columns."),
-        h3("ncRNA Expression Data"),
+# ncRNA --------
+        h3("NcRNA Expression Data"),
         fileInput(ns("ncRNA_file"), 'Upload ncRNA expression data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
                            '.csv')
@@ -32,7 +32,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                        selected = 0),
         ),
         
-#Filtering----------------------------------------------------------------------
+#Filtering ncRNA----------------------------------------------------------------
         
         radioButtons(ns("platform"), label = "Select the sequencing platform of ncRNA data.",
                      choices = list("bulk RNA-seq" = 1, 
@@ -40,121 +40,146 @@ preproc_ui <- function(id, label= "preprocessing data") {
                                     "scRNA-seq" = 3
                      ),
                      selected = 1),
-# bulk RNA-seq fitlering criteria        
-conditionalPanel(
-  condition = "input['preproc-platform'] == 1",
+        ## bulk RNA-seq fitlering criteria  (ncRNA) -----     
+        conditionalPanel(
+          condition = "input['preproc-platform'] == 1",
+          
+          numericInput(ns("variance"), label ="Keep the ?% genes with the highest variance:",
+                      min = 0, max = 1, value = 0, step = 0.1),
+          
+          numericInput(ns("mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
 
-  # radioButtons(ns("format"), label = "Select the naming format of your lncRNA data.",
-  #              choices = list("RPKM" = 0,
-  #                             "TPM" = 1, 
-  #                             "CPM" = 2),
-  #              selected = 0),
-  
-  numericInput(ns("Variance"), label ="Keep the ?% genes with the highest variance:",
-              min = 0, max = 0, value = 0, step = 1),
-  
-  numericInput(ns("mean"), label = "Filter mean for ncRNA",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-  
-  # conditionalPanel(
-  #   condition = "input['preproc-format'] == 0",  # RPKM selected
-  #   numericInput(ns("cutoff_RPKM"), label = "Set filtering cutoff for RPKM:",
-  #                value = 0,
-  #                min = 0,
-  #                step = 1
-  #   ),
-  # ),
-  # conditionalPanel(
-  #   condition = "input['preproc-format'] == 1",  # TPM selected
-  #   numericInput(ns("cutoff_TPM"), label = "Set filtering cutoff for TPM:",
-  #                value = 0,
-  #                min = 0,
-  #                step = 1
-  #   ),
-  # ),
-#   conditionalPanel(
-#     condition = "input['preproc-format'] == 2",  # CPM selected
-#   #   sliderInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
-#   #               min = 10, max = 20, value = 10, step = 1)
-#   # ),
-#   numericInput(ns("cutoff_CPM"), label = "Set filtering cutoff for CPM:",
-#                value = 0,
-#                min = 0,
-#                step = 1
-#   ),
-# ),
-),
+        ## microarray fitlering criteria (ncRNA)------
+        conditionalPanel(
+          condition = "input['preproc-platform'] == 2",
+          numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
 
-# microarray fitlering criteria 
-conditionalPanel(
-  condition = "input['preproc-platform'] == 2",
-  numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-  numericInput(ns("mean"), label = "Filter mean for ncRNA",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-),
+        ## scRNA-seq filtering criteria (ncRNA)-----
+        
+        conditionalPanel(
+          condition = "input['preproc-platform'] == 3",
+          numericInput(ns("zero"), label = "Filter zero count for ncRNA",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
 
-# scRNA-seq filtering criteria
-
-conditionalPanel(
-  condition = "input['preproc-platform'] == 3",
-  numericInput(ns("percentage of zero count"), label = "Filter zero count for ncRNA",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-  numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-  numericInput(ns("mean"), label = "Filter mean for ncRNA",
-               value = 0,
-               min = 0,
-               step = 1
-  ),
-),
-
-# log2 transformation
+        ## log2 transformation------
         radioButtons(ns("log2_transformation"), label = "Has the data been log2-transformed?",
                      choices = list("yes" = 1, 
                                     "no" = 2
                      ),
                      selected = 1),
-        
-        # numericInput(ns("cutoff_ncRNA"), label = "Filter Cutoff for ncRNA",
-        #              value = 0,
-        #              min = 0,
-        #              step = 1
-        # ),
-        # p("Filter for rows whose average value is greater than this threshold."),
-        
+
+
+#Filtering gene expression------------------------------------------------------
         h3("Gene Expression Data"),
         p("All gene names/IDs will be converted to the HGNC approved symbol."),
-        radioButtons(ns("name_gene"), label = "Select the naming format of your gene data.",
-                     choices = list("HGNC Symbol" = 0, 
-                                    "ENSG ID" = 1),
-                     selected = 0),
         fileInput(ns("gene_file"), 'Upload gene expression data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
                            '.csv')
         ),
-        numericInput(ns("cutoff_gene"), label = "Filter Cutoff for Gene",
-                     value = 0,
-                     min = 0,
-                     step = 1
-        ),
-        p("Filter for rows whose average value is greater than this threshold."),
+        radioButtons(ns("name_gene"), label = "Select the naming format of your gene data.",
+                     choices = list("HGNC Symbol" = 0, 
+                                    "ENSG ID" = 1),
+                     selected = 0),
         
+        radioButtons(ns("gene_platform"), label = "Select the sequencing platform of gene expression data.",
+                     choices = list("bulk RNA-seq" = 1, 
+                                    "microarray" = 2,
+                                    "scRNA-seq" = 3
+                     ),
+                     selected = 1),
+        ## bulk RNA-seq fitlering criteria (gene expression)----       
+        conditionalPanel(
+          condition = "input['preproc-gene_platform'] == 1",
+          
+          numericInput(ns("gene_variance"), label ="Keep the ?% genes with the highest variance:",
+                       min = 0, max = 1, value = 0, step = 0.1),
+          
+          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
+
+        ## microarray fitlering criteria (gene expression)------
+        conditionalPanel(
+          condition = "input['preproc-gene_platform'] == 2",
+          numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
+
+        ## scRNA-seq filtering criteria (gene expression)-------
+        
+        conditionalPanel(
+          condition = "input['preproc-gene_platform'] == 3",
+          numericInput(ns("gene_zero"), label = "Filter zero count for ncRNA",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
+                       value = 0,
+                       min = 0,
+                       max = 1,
+                       step = 0.1
+          ),
+          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
+                       value = 0,
+                       min = 0,
+                       step = 1
+          ),
+        ),
+
+        ## log2 transformation (gene expression)------
+      radioButtons(ns("log2_transformation"), label = "Has the data been log2-transformed?",
+                   choices = list("yes" = 1, 
+                                  "no" = 2
+                   ),
+                   selected = 1),
+              p("Filter for rows whose average value is greater than this threshold."),
+
         h3("Clinical Data"),
         fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
