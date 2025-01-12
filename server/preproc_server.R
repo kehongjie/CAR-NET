@@ -1,5 +1,5 @@
 preproc_server <- function(input, output, session) {
-
+  
   ns <- NS("preproc")
   
   ##########################
@@ -20,11 +20,6 @@ preproc_server <- function(input, output, session) {
   # watch for tab change, get the newest list of all data
   observeEvent(input$tabChange, {DB$names <- DB.ls(db)}, 
                label="tab change")
-  
-  # Load sample data------
-  
-    
-    
   
   # mean filter function
   internal_filter = function(M, fence){
@@ -57,15 +52,18 @@ preproc_server <- function(input, output, session) {
   ######################################
   # FILTER SELECTION-----
   
-  # watch for filter selection for ncRNA-------
+# watch for filter selection for ncRNA-------
   
   observe({
-    print(input$mean)  # print ncRNA_file
+    print(input$mean)
+    print(input$variance)
   })
   
   ## filter for mean ------
   observeEvent(input$mean, {
-  #  browser() 
+    #browser()
+    #mean_text <- input$mean
+    #mean_num <- suppressWarnings(as.numeric(mean_text))
     if (!is.null(input$ncRNA_file)) {
       output$ncRNA_file <- DT::renderDataTable({
         filePath <- input$ncRNA_file
@@ -126,7 +124,8 @@ preproc_server <- function(input, output, session) {
   ## filter for variance ------
   
   observeEvent(input$variance, {
-    #  browser() 
+    #variance_text <- input$variance
+    #variance_num <- suppressWarnings(as.numeric(variance_text))
     if (!is.null(input$ncRNA_file)) {
       output$ncRNA_file <- DT::renderDataTable({
         filePath <- input$ncRNA_file
@@ -184,7 +183,7 @@ preproc_server <- function(input, output, session) {
     }
   }, label="Filter Mean Cutoff for ncRNA")
   
-  # filter for zero count scRNA-seq (ncRNA)
+  ## filter for zero count scRNA-seq (ncRNA)------
   observeEvent(input$zero, {
     #  browser() 
     if (!is.null(input$ncRNA_file)) {
@@ -242,7 +241,73 @@ preproc_server <- function(input, output, session) {
     } else {
       return(NULL)
     }
-  }, label="Filter zero count Cutoff for ncRNA")
+  }, label="Filter zero count cutoff for ncRNA")
+  
+  ## Log2 or not (ncRNA)-------
+  observeEvent(input$log2_transformation, {
+    #browser()
+    if (!is.null(input$ncRNA_file)) {
+      output$ncRNA_file <- DT::renderDataTable({
+        filePath <- input$ncRNA_file
+        fileText <- read.csv(filePath$datapath, check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        genes <- colnames(df)
+        names_rna(genes)
+        
+        val <- ncRNA_name()
+        val2 <- RNA_type()
+        
+        if (val2 == 2) {
+          ENSG_ids <- c()
+          if (val == 0) {
+            ENSG_ids <- colnames(df)
+          } else if (val == 1) {
+            ref <- read.csv("./data/reference/ENSG_lnci.csv")
+            for (gene in genes) {
+              if (gene %in% ref$ENSG) {
+                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
+              } else {
+                ENSG_ids <- c(ENSG_ids, gene)
+              }
+            }
+          } else if (val == 2) {
+            ref <- read.csv("./data/reference/HSAL_lnci.csv")
+            for (gene in genes) {
+              if (gene %in% ref$HSAL) {
+                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
+              } else {
+                ENSG_ids <- c(ENSG_ids, gene)
+              }
+            }
+          } else if (val == 3) {
+            ref <- read.csv("./data/reference/HGNC_lnci.csv")
+            for (gene in genes) {
+              if (gene %in% ref$HGNC) {
+                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
+              } else {
+                ENSG_ids <- c(ENSG_ids, gene)
+              }
+            }
+          }
+          colnames(df) <- ENSG_ids
+          names_rna(ENSG_ids)
+        }
+        t(df)
+        if(input$log2_transformation==2){
+          t(log2(df+1))
+        }
+        else{
+          return(t(df))
+        }
+        })
+    } else {
+      return(NULL)
+    }
+  }, label="Log transformation for ncRNA")
+  
   
 # watch for filter for gene expression------------
   
@@ -353,10 +418,48 @@ preproc_server <- function(input, output, session) {
     }
   }, label="Filter Zero Count Cutoff for gene expression")
   
+  ## log2 or not (gene expression)----
+  observeEvent(input$gene_log2_transformation, {
+    if (!is.null(input$gene_file)) {
+      output$gene_file <- DT::renderDataTable({
+        filePath <- input$gene_file
+        fileText <- read.csv(filePath$datapath, check.names = FALSE)
+        df <- t(fileText)
+        colnames(df) <- df[1,]
+        df <- df[-1,]
+        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
+        genes <- colnames(df)
+        names_gene(genes)
+        
+        if (gene_name() == 1) {
+          ENSG_ids <- c()
+          for (gene in genes) {
+            if (gene %in% ref$Ensembl_gene_ID) {
+              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
+            } else {
+              ENSG_ids <- c(ENSG_ids, gene)
+            }
+          }
+          colnames(df) <- ENSG_ids
+          names_gene(ENSG_ids)
+        }
+        t(df)
+        if(input$gene_log2_transformation==2){
+          t(log2(df+1))
+        }
+        else{
+          return(t(df))
+        }
+        })
+    } else {
+      return(NULL)
+    }
+  }, label="Log2 transformation for gene expression")
   
   
   ######################################
-  # FILE UPLOAD
+  # FILE UPLOAD-----
   
   # watch for ncRNA expression files upload-----
   observeEvent(input$ncRNA_file, {

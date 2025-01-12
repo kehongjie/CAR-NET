@@ -43,30 +43,32 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ## bulk RNA-seq fitlering criteria  (ncRNA) -----     
         conditionalPanel(
           condition = "input['preproc-platform'] == 1",
-          
           numericInput(ns("variance"), label ="Keep the ?% genes with the highest variance:",
-                      min = 0, max = 1, value = 0, step = 0.1),
+                      min = 0.1, max = 1, 
+                      value = 0.1,
+                      step = 0.05
+                      ),
           
           numericInput(ns("mean"), label = "Filter mean for ncRNA",
-                       value = 0,
-                       min = 0,
-                       step = 1
+                       value = 1,
+                       min = 1,
+                       step = 0.5
           ),
-        ),
+         ),
 
         ## microarray fitlering criteria (ncRNA)------
         conditionalPanel(
           condition = "input['preproc-platform'] == 2",
           numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("mean"), label = "Filter mean for ncRNA",
-                       value = 0,
+                       value = 1,
                        min = 0,
-                       step = 1
+                       step = 0.5
           ),
         ),
 
@@ -75,21 +77,21 @@ preproc_ui <- function(id, label= "preprocessing data") {
         conditionalPanel(
           condition = "input['preproc-platform'] == 3",
           numericInput(ns("zero"), label = "Filter zero count for ncRNA",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("mean"), label = "Filter mean for ncRNA",
-                       value = 0,
+                       value = 1,
                        min = 0,
-                       step = 1
+                       step = 0.5
           ),
         ),
 
@@ -99,7 +101,6 @@ preproc_ui <- function(id, label= "preprocessing data") {
                                     "no" = 2
                      ),
                      selected = 1),
-
 
 #Filtering gene expression------------------------------------------------------
         h3("Gene Expression Data"),
@@ -124,12 +125,12 @@ preproc_ui <- function(id, label= "preprocessing data") {
           condition = "input['preproc-gene_platform'] == 1",
           
           numericInput(ns("gene_variance"), label ="Keep the ?% genes with the highest variance:",
-                       min = 0, max = 1, value = 0, step = 0.1),
+                       min = 0, max = 1, value = 0.1, step = 0.05),
           
           numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
-                       value = 0,
+                       value = 1,
                        min = 0,
-                       step = 1
+                       step = 0.5
           ),
         ),
 
@@ -137,15 +138,15 @@ preproc_ui <- function(id, label= "preprocessing data") {
         conditionalPanel(
           condition = "input['preproc-gene_platform'] == 2",
           numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
-                       value = 0,
+                       value = 1,
                        min = 0,
-                       step = 1
+                       step = 0.5
           ),
         ),
 
@@ -154,32 +155,33 @@ preproc_ui <- function(id, label= "preprocessing data") {
         conditionalPanel(
           condition = "input['preproc-gene_platform'] == 3",
           numericInput(ns("gene_zero"), label = "Filter zero count for ncRNA",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0,
+                       value = 0.1,
                        min = 0,
                        max = 1,
-                       step = 0.1
+                       step = 0.05
           ),
           numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
-                       value = 0,
+                       value = 1,
                        min = 0,
-                       step = 1
+                       step = 0.5
           ),
         ),
 
         ## log2 transformation (gene expression)------
-      radioButtons(ns("log2_transformation"), label = "Has the data been log2-transformed?",
+      radioButtons(ns("gene_log2_transformation"), label = "Has the data been log2-transformed?",
                    choices = list("yes" = 1, 
                                   "no" = 2
                    ),
                    selected = 1),
               p("Filter for rows whose average value is greater than this threshold."),
 
+# Clinical Data--------
         h3("Clinical Data"),
         fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
