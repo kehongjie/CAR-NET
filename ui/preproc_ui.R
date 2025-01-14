@@ -35,60 +35,43 @@ preproc_ui <- function(id, label= "preprocessing data") {
 #Filtering ncRNA----------------------------------------------------------------
         
         radioButtons(ns("platform"), label = "Select the sequencing platform of ncRNA data.",
-                     choices = list("bulk RNA-seq" = 1, 
-                                    "microarray" = 2,
-                                    "scRNA-seq" = 3
+                     choices = list("bulk RNA-seq / microarray" = 1, 
+                                    "scRNA-seq" = 2
                      ),
                      selected = 1),
-        ## bulk RNA-seq fitlering criteria  (ncRNA) -----     
+        ## bulk RNA-seq / microarray fitlering criteria  (ncRNA) -----     
         conditionalPanel(
           condition = "input['preproc-platform'] == 1",
-          numericInput(ns("variance"), label ="Keep the ?% genes with the highest variance:",
+          numericInput(ns("variance"), label ="Keep the ? genes with the highest variance:",
                       min = 0.1, max = 1, 
                       value = 0.1,
                       step = 0.05
                       ),
           
-          numericInput(ns("mean"), label = "Filter mean for ncRNA",
+          numericInput(ns("mean"), label = "Filter mean",
                        value = 1,
                        min = 1,
                        step = 0.5
           ),
          ),
 
-        ## microarray fitlering criteria (ncRNA)------
-        conditionalPanel(
-          condition = "input['preproc-platform'] == 2",
-          numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0.1,
-                       min = 0,
-                       max = 1,
-                       step = 0.05
-          ),
-          numericInput(ns("mean"), label = "Filter mean for ncRNA",
-                       value = 1,
-                       min = 0,
-                       step = 0.5
-          ),
-        ),
-
         ## scRNA-seq filtering criteria (ncRNA)-----
         
         conditionalPanel(
-          condition = "input['preproc-platform'] == 3",
-          numericInput(ns("zero"), label = "Filter zero count for ncRNA",
+          condition = "input['preproc-platform'] == 2",
+          numericInput(ns("zero"), label = "Filter zero count",
                        value = 0.1,
                        min = 0,
                        max = 1,
                        step = 0.05
           ),
-          numericInput(ns("variance"), label = "Keep the ?% genes with the highest variance:",
+          numericInput(ns("variance"), label = "Keep the ? genes with the highest variance:",
                        value = 0.1,
                        min = 0,
                        max = 1,
                        step = 0.05
           ),
-          numericInput(ns("mean"), label = "Filter mean for ncRNA",
+          numericInput(ns("mean"), label = "Filter mean",
                        value = 1,
                        min = 0,
                        step = 0.5
@@ -116,34 +99,17 @@ preproc_ui <- function(id, label= "preprocessing data") {
         
         radioButtons(ns("gene_platform"), label = "Select the sequencing platform of gene expression data.",
                      choices = list("bulk RNA-seq" = 1, 
-                                    "microarray" = 2,
-                                    "scRNA-seq" = 3
+                                    "scRNA-seq" = 2
                      ),
                      selected = 1),
         ## bulk RNA-seq fitlering criteria (gene expression)----       
         conditionalPanel(
           condition = "input['preproc-gene_platform'] == 1",
           
-          numericInput(ns("gene_variance"), label ="Keep the ?% genes with the highest variance:",
+          numericInput(ns("gene_variance"), label ="Keep the ? genes with the highest variance:",
                        min = 0, max = 1, value = 0.1, step = 0.05),
           
-          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
-                       value = 1,
-                       min = 0,
-                       step = 0.5
-          ),
-        ),
-
-        ## microarray fitlering criteria (gene expression)------
-        conditionalPanel(
-          condition = "input['preproc-gene_platform'] == 2",
-          numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
-                       value = 0.1,
-                       min = 0,
-                       max = 1,
-                       step = 0.05
-          ),
-          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
+          numericInput(ns("gene_mean"), label = "Filter mean",
                        value = 1,
                        min = 0,
                        step = 0.5
@@ -153,20 +119,20 @@ preproc_ui <- function(id, label= "preprocessing data") {
         ## scRNA-seq filtering criteria (gene expression)-------
         
         conditionalPanel(
-          condition = "input['preproc-gene_platform'] == 3",
-          numericInput(ns("gene_zero"), label = "Filter zero count for ncRNA",
+          condition = "input['preproc-gene_platform'] == 2",
+          numericInput(ns("gene_zero"), label = "Filter zero count",
                        value = 0.1,
                        min = 0,
                        max = 1,
                        step = 0.05
           ),
-          numericInput(ns("gene_variance"), label = "Keep the ?% genes with the highest variance:",
+          numericInput(ns("gene_variance"), label = "Keep the ? genes with the highest variance:",
                        value = 0.1,
                        min = 0,
                        max = 1,
                        step = 0.05
           ),
-          numericInput(ns("gene_mean"), label = "Filter mean for ncRNA",
+          numericInput(ns("gene_mean"), label = "Filter mean",
                        value = 1,
                        min = 0,
                        step = 0.5
@@ -182,7 +148,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
               p("Filter for rows whose average value is greater than this threshold."),
 
 # Clinical Data--------
-        h3("Clinical Data"),
+        h3("Clinical Data (Optional)"),
         fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
                   accept=c('text/csv', 'text/comma-separated-values,text/plain', 
                            '.csv')
