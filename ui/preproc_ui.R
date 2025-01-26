@@ -24,14 +24,13 @@ preproc_ui <- function(id, label= "preprocessing data") {
                      selected = 1),
         conditionalPanel(
           condition = "input['preproc-RNA_type'] == 2",
-          radioButtons(ns("name_ncRNA"), label = "Select the naming format of your lncRNA data.",
+          radioButtons(ns("ncRNA_name"), label = "Select the naming format of your lncRNA data.",
                        choices = list("LNCipedia" = 0,
                                       "ENSG" = 1, 
                                       "HSALN" = 2,
                                       "HGNC" = 3),
                        selected = 0),
         ),
-        
 #Filtering ncRNA----------------------------------------------------------------
         
         radioButtons(ns("platform"), label = "Select the sequencing platform of ncRNA data.",
@@ -85,6 +84,9 @@ preproc_ui <- function(id, label= "preprocessing data") {
                      ),
                      selected = 1),
 
+        actionButton(ns("submit_btn"), "Submit",icon = icon("play")),
+
+
 #Filtering gene expression------------------------------------------------------
         h3("Gene Expression Data"),
         p("All gene names/IDs will be converted to the HGNC approved symbol."),
@@ -98,7 +100,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                      selected = 0),
         
         radioButtons(ns("gene_platform"), label = "Select the sequencing platform of gene expression data.",
-                     choices = list("bulk RNA-seq" = 1, 
+                     choices = list("bulk RNA-seq / microarray" = 1, 
                                     "scRNA-seq" = 2
                      ),
                      selected = 1),
@@ -146,6 +148,9 @@ preproc_ui <- function(id, label= "preprocessing data") {
                    ),
                    selected = 1),
               p("Filter for rows whose average value is greater than this threshold."),
+
+      actionButton(ns("submit_btn_gene"), "Submit",icon = icon("play")),
+
 
 # Clinical Data--------
         h3("Clinical Data (Optional)"),

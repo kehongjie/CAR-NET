@@ -8,7 +8,8 @@ preproc_server <- function(input, output, session) {
   DB   <- reactiveValues(names=DB.ls(db))
   names_rna <- reactiveVal()  # final list of lncRNA lncipedia symbols
   names_gene <- reactiveVal() # final list of gene HGNC symbols
-  ncRNA_name <- reactiveVal() # naming format of original lncRNA data
+  ncRNA_name <- reactiveVal() # naming format of original lncRNA data, 
+  # 0 = LNCipedia, 1 = ENSG , 2 = HSALN, 3 = HGNC
   RNA_type <- reactiveVal()   # type of original RNA data (micro or long non-coding)
   gene_name <- reactiveVal()  # naming format of original gene data
 
@@ -23,10 +24,10 @@ preproc_server <- function(input, output, session) {
   
   # mean filter function
   internal_filter = function(M, fence){
-    df = M
+    df = t(M)
     avg_df = apply(df, 2, mean)
     ind = avg_df < fence
-    return(list(df[,!ind, drop = FALSE], ind))
+    return(list(t(df[,!ind, drop = FALSE]), ind))
   }
   
   # variance filter function
@@ -59,404 +60,114 @@ preproc_server <- function(input, output, session) {
     print(input$variance)
   })
   
-  ## filter for mean ------
-  observeEvent(input$mean, {
-    #browser()
-    #mean_text <- input$mean
-    #mean_num <- suppressWarnings(as.numeric(mean_text))
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- as.data.frame(internal_filter(df, input$mean)[1], check.names = FALSE)
-        genes <- colnames(df)
-        names_rna(genes)
-        
-        val <- ncRNA_name()
-        val2 <- RNA_type()
-        
-        if (val2 == 2) {
-          ENSG_ids <- c()
-          if (val == 0) {
-            ENSG_ids <- colnames(df)
-          } else if (val == 1) {
-            ref <- read.csv("./data/reference/ENSG_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$ENSG) {
+  
+  ## submit button -----
+  observeEvent(input$submit_btn, {
+    filePath <- input$ncRNA_file
+    fileText <- read.csv(filePath$datapath, check.names = F, row.names = 1)
+    df <- fileText
+    mean_threshold <- as.numeric(input$mean)
+    variance_threshold <- as.numeric(input$variance)
+    zero_threshold <- input$zero
+    log2 <- input$log2_transformation
+    val2 <- input$RNA_type
+    val <- input$ncRNA_name
+    plat <- input$platform
+    
+    if(plat == 2 ){
+      df_f <- internal_filter_zero(df,input$zero)
+      df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      df_f <- internal_filter_var(df,variance_threshold) 
+    }else if(plat == 1){
+      df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      df_f <- internal_filter_var(df,variance_threshold) 
+    }
+    
+    if(log2 == 2){
+      df_f <- log2(df_f+1)
+    }
+    
+    df <- t(df_f)
+    if(val2 == 2){ # lncRNA
+      ENSG_ids <- c()
+      if(val == 0){ # LNCipedia
+        ENSG_ids <- colnames(df)
+      }else if (val == 1) { # ENSG
+        ref <- read.csv("./data/reference/ENSG_lnci.csv")
+        for (gene in genes) {
+            if (gene %in% ref$ENSG) {
                 ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-              } else {
+            } else {
                 ENSG_ids <- c(ENSG_ids, gene)
-              }
             }
-          } else if (val == 2) {
+         }
+      }else if (val == 2){
             ref <- read.csv("./data/reference/HSAL_lnci.csv")
             for (gene in genes) {
-              if (gene %in% ref$HSAL) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 3) {
-            ref <- read.csv("./data/reference/HGNC_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HGNC) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
+                if (gene %in% ref$HSAL) {
+                    ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
+                } else {
+                    ENSG_ids <- c(ENSG_ids, gene)
           }
-          colnames(df) <- ENSG_ids
-          names_rna(ENSG_ids)
         }
-        t(df)
-      })
-    } else {
-      return(NULL)
+      }else if (val == 3){
+        ref <- read.csv("./data/reference/HGNC_lnci.csv")
+        if (gene %in% ref$HGNC) {
+          ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
+        }else {
+          ENSG_ids <- c(ENSG_ids, gene)
+        }
+      }
+      colnames(df) <- ENSG_ids
+      names_rna(ENSG_ids)
     }
-  }, label="Filter Mean Cutoff for ncRNA")
-  
-  ## filter for variance ------
-  
-  observeEvent(input$variance, {
-    #variance_text <- input$variance
-    #variance_num <- suppressWarnings(as.numeric(variance_text))
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- internal_filter_var(df,input$variance)
-        genes <- colnames(df)
-        names_rna(genes)
-        
-        val <- ncRNA_name()
-        val2 <- RNA_type()
-        
-        if (val2 == 2) {
-          ENSG_ids <- c()
-          if (val == 0) {
-            ENSG_ids <- colnames(df)
-          } else if (val == 1) {
-            ref <- read.csv("./data/reference/ENSG_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$ENSG) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 2) {
-            ref <- read.csv("./data/reference/HSAL_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HSAL) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 3) {
-            ref <- read.csv("./data/reference/HGNC_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HGNC) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_rna(ENSG_ids)
-        }
-        t(df)
-      })
-    } else {
-      return(NULL)
-    }
-  }, label="Filter Mean Cutoff for ncRNA")
-  
-  ## filter for zero count scRNA-seq (ncRNA)------
-  observeEvent(input$zero, {
-    #  browser() 
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- internal_filter_zero(df,input$zero)
-        genes <- colnames(df)
-        names_rna(genes)
-        
-        val <- ncRNA_name()
-        val2 <- RNA_type()
-        
-        if (val2 == 2) {
-          ENSG_ids <- c()
-          if (val == 0) {
-            ENSG_ids <- colnames(df)
-          } else if (val == 1) {
-            ref <- read.csv("./data/reference/ENSG_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$ENSG) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 2) {
-            ref <- read.csv("./data/reference/HSAL_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HSAL) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 3) {
-            ref <- read.csv("./data/reference/HGNC_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HGNC) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_rna(ENSG_ids)
-        }
-        t(df)
-      })
-    } else {
-      return(NULL)
-    }
-  }, label="Filter zero count cutoff for ncRNA")
-  
-  ## Log2 or not (ncRNA)-------
-  observeEvent(input$log2_transformation, {
-    #browser()
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        genes <- colnames(df)
-        names_rna(genes)
-        
-        val <- ncRNA_name()
-        val2 <- RNA_type()
-        
-        if (val2 == 2) {
-          ENSG_ids <- c()
-          if (val == 0) {
-            ENSG_ids <- colnames(df)
-          } else if (val == 1) {
-            ref <- read.csv("./data/reference/ENSG_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$ENSG) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 2) {
-            ref <- read.csv("./data/reference/HSAL_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HSAL) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 3) {
-            ref <- read.csv("./data/reference/HGNC_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HGNC) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_rna(ENSG_ids)
-        }
-        t(df)
-        if(input$log2_transformation==2){
-          t(log2(df+1))
-        }
-        else{
-          return(t(df))
-        }
-        })
-    } else {
-      return(NULL)
-    }
-  }, label="Log transformation for ncRNA")
+    output$ncRNA_file <- DT::renderDataTable({
+      t(df)
+    })
+  }, label="Filter lncRNA data.")
   
   
 # watch for filter for gene expression------------
   
-  ## mean filter selection for gene--------
-  observeEvent(input$gene_mean, {
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
-        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        names_gene(genes)
-        
-        if (gene_name() == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Ensembl_gene_ID) {
-              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, gene)
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_gene(ENSG_ids)
+  observeEvent(input$submit_btn_gene, {
+    filePath <- input$gene_file
+    fileText <- read.csv(filePath$datapath, check.names = FALSE,row.names = 1)
+    df <- fileText
+    val <- input$name_gene
+    plat_g <- input$gene_platform
+    log2_g <- input$gene_log2_transformation
+    ref <- read.csv("./data/reference/ENSG_HGNC.csv")
+    genes <- rownames(df)
+    if(val == 1 ){
+      ENSG_ids <- c()
+      for (gene in genes) {
+        if (gene %in% ref$Ensembl_gene_ID) {
+          ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
+        } else {
+          ENSG_ids <- c(ENSG_ids, gene)
         }
-        
-        t(df)
-      })
-    } else {
-      return(NULL)
+      }
+      rownames(df) <- ENSG_ids
     }
-  }, label="Filter Mean Cutoff for gene expression")
-  
-  
-  ## variance filter for gene expression------
-  observeEvent(input$gene_variance, {
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- internal_filter_var(df,input$gene_variance)
-        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        names_gene(genes)
-        
-        if (gene_name() == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Ensembl_gene_ID) {
-              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, gene)
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_gene(ENSG_ids)
-        }
-        
-        t(df)
-      })
-    } else {
-      return(NULL)
+    
+    if(plat_g == 2 ){
+      df_f <- internal_filter_zero(df,input$zero)
+      df_f <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
+      df_f <- internal_filter_var(df,input$gene_variance) 
+    }else if(plat_g == 1){
+      df_f <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
+      df_f <- internal_filter_var(df,input$gene_variance) 
     }
-  }, label="Filter Variance Cutoff for gene expression")
-  
-  
-  ## zero count filter for gene expression--------
-  observeEvent(input$gene_zero, {
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- internal_filter_zero(df,input$gene_zero)
-        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        names_gene(genes)
-        
-        if (gene_name() == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Ensembl_gene_ID) {
-              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, gene)
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_gene(ENSG_ids)
-        }
-        
-        t(df)
-      })
-    } else {
-      return(NULL)
+    if(log2_g == 2){
+      df_f <- log2(df_f+1)
     }
-  }, label="Filter Zero Count Cutoff for gene expression")
+    output$gene_file <- DT::renderDataTable({
+      df_f
+    })
+  },label="Filter gene expression data")
   
-  ## log2 or not (gene expression)----
-  observeEvent(input$gene_log2_transformation, {
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        names_gene(genes)
-        
-        if (gene_name() == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Ensembl_gene_ID) {
-              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, gene)
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_gene(ENSG_ids)
-        }
-        t(df)
-        if(input$gene_log2_transformation==2){
-          t(log2(df+1))
-        }
-        else{
-          return(t(df))
-        }
-        })
-    } else {
-      return(NULL)
-    }
-  }, label="Log2 transformation for gene expression")
-  
+ 
+
   
   ######################################
   # FILE UPLOAD-----
