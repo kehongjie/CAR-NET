@@ -3,12 +3,12 @@ installed <- installed.packages()[,"Package"]
 shinyUI(
   navbarPage("NGRN", id="nav",
     header=tagList(
-      tags$div(id="working-dir",
-        tagList(
-          tags$p("Working Directory", class="header-label"),
-          tags$p(textOutput("setting-working.dir"))
-        )
-      )
+      # tags$div(id="working-dir",
+      #   tagList(
+      #     tags$p("Working Directory", class="header-label"),
+      #     tags$p(textOutput("setting-working.dir"))
+      #   )
+      # )
     ),
     # tab for global settings
     setting_ui("setting"),
