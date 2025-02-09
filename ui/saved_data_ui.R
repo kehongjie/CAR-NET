@@ -58,16 +58,16 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                
                
                h3("Part B:"),
-               h3("Module Detection and Pathway Analysis"),
+               h3("Module Detection"),
                numericInput(ns("mod_size"), label ="Minimum module size:",
                             min = 1, max = 100, 
                             value = 10, step=1),
-               actionButton(ns("plotGlobalMDS"),
+               actionButton(ns("butt_mod"),
                             'B1: Detect module',
                             class="btn-success",
                             icon = icon("play")),
                # h3(),
-               selectInput(ns("measure"), label = "Select which module to display (in descending module size):",
+               selectInput(ns("sel_mod"), label = "Select a module to display (in descending module size):",
                            choices = c(1)),
                # selectInput(ns("pathway"), 
                #             label="Select pathways to work on (multiple):",
@@ -110,16 +110,18 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                            #          plotOutput(ns("globalMdsFig")))
                            tabPanel(value = "panel1",
                                     h3("Overview of the full network"),
-                                    verbatimTextOutput(ns("text"))),
+                                    verbatimTextOutput(ns("text")),
+                                    tableOutput(ns("table_pair"))),
                            tabPanel(value = "panel2",
-                                    h3("Regulation heatmap"),
-                                    verbatimTextOutput(ns("text"))),
+                                    h3("Modulization"),
+                                    plotOutput(ns("heatmap"), width = "1000px", height = "800px"),
+                                    tableOutput(ns("table_node"))),
                            tabPanel(value = "panel3",
-                                    h3("Module network visualization"),
-                                    verbatimTextOutput(ns("text"))),
+                                    h3("Modules visualization"),
+                                    plotOutput(ns("network_visual"))),
                            tabPanel(value = "panel4",
                                     h3("Differential regulation"),
-                                    verbatimTextOutput(ns("text")))
+                                    verbatimTextOutput(ns("text4")))
                                     
                )
              )
