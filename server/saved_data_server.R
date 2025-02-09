@@ -13,11 +13,13 @@ saved_data_server <- function(input, output, session, ImProxy) {
     ACS_ADS_global=NULL,
     ACS_ADS_pathway=NULL
   )
+  
   adj_mat <- reactiveVal(value = NULL)  # final adjacency matrix
   post_prob <- reactiveVal()  # posterior probability matrix
   p <- reactiveVal()  # number of ncRNA
   q <- reactiveVal()  # number of genes
   
+  shared_var <- reactiveValues()
   
   ##########################
   # Observers              #
@@ -27,7 +29,9 @@ saved_data_server <- function(input, output, session, ImProxy) {
   source("./internal_functions/bn_main.R")
   source("./internal_functions/gui_filter.R")
   source("./internal_functions/single-adj_different_size.r")
+  source("./internal_functions/network_partition.R")
   
+  ########## run BN and overview ##########
   observeEvent(input$ACS_ADS, {
     wait(session, "Generating Bayesian Network, may take a while")
     path_old <- getwd()
@@ -62,48 +66,46 @@ saved_data_server <- function(input, output, session, ImProxy) {
       fit <- bn.main(X=X, Y=Y, alpha=1e-5)
       # load("./bn.RData")
       
-      output$text <- renderText({ paste("After Stage 1:\n",
-        "Left with ", fit$s1_lvl1, " level-1 edges\n",
-        "Left with ", fit$s1_lvl2, " level-2 edges\n",
-        "Involving ", fit$s1_rna, " ncRNAs and ", fit$s1_gene, " genes\n",
-        "After Stage 2:\n",
-        "Left with ", fit$s2_lvl1, " level-1 edges\n", 
-        "Left with ", fit$s2_lvl2, " level-2 edges\n",
-        "Involving ", fit$s2_rna, " ncRNAs and ", fit$s2_gene, " genes", sep="") })
+      # output$text <- renderText({ paste("After Stage 1:\n",
+      #   "Left with ", fit$s1_lvl1, " level-1 edges\n",
+      #   "Left with ", fit$s1_lvl2, " level-2 edges\n",
+      #   "Involving ", fit$s1_rna, " ncRNAs and ", fit$s1_gene, " genes\n",
+      #   "After Stage 2:\n",
+      #   "Left with ", fit$s2_lvl1, " level-1 edges\n", 
+      #   "Left with ", fit$s2_lvl2, " level-2 edges\n",
+      #   "Involving ", fit$s2_rna, " ncRNAs and ", fit$s2_gene, " genes", sep="") })
       
-      rownames(fit$adj) <- c(ImProxy$names_rna, ImProxy$names_gene)
-      colnames(fit$adj) <- c(ImProxy$names_rna, ImProxy$names_gene)
-      pos_small <- (rowSums(fit$adj)>0 | colSums(fit$adj)>0)
-      small <- fit$adj[pos_small, pos_small]
-      adj_mat(small)
-      post_prob(fit$post.prob)
+      ## output for panel 1
+      output$text <- renderText({paste("Final network inlcudes ", 
+                                       fit$s2_rna, " ncRNAs and ", fit$s2_gene, " genes;\n",
+                                       fit$s2_lvl1, " ncRNA-->ncRNA edges and ",
+                                       fit$s2_lvl2, " gene-->gene edges.",
+                                       sep="") })
+      
+      output$table_pair <- renderTable(fit$mat_pair, striped=TRUE)
+      
+      
+      # rownames(fit$adj) <- c(ImProxy$names_rna, ImProxy$names_gene)
+      # colnames(fit$adj) <- c(ImProxy$names_rna, ImProxy$names_gene)
+      
+      pos_innet <- (rowSums(fit$adj)>0 | colSums(fit$adj)>0) ## position of in-network nodes
+      small <- fit$adj[pos_innet, pos_innet]
+      dag_sub <- fit$adj[pos_innet, pos_innet] ## remove rows/columns that are all zero
+      adj_mat(dag_sub) ## dimension p2*q2
+      post_prob(fit$post.prob[pos_innet, pos_innet])
+      p1 <- fit$s1_rna
+      q1 <- fit$s1_gene
+      p2 <- sum(pos_innet[1:p1])
+      q2 <- sum(pos_innet[(p1+1):(p1+q1)])
+      
+      shared_var$pos_innet <- pos_innet
+      shared_var$p2 <- p2
+      shared_var$q2 <- q2
       
       save(fit, file="bn.RData")
       print("Bayesian Network saved as 'bn.RData'.")
       
-      # output  global ACS/ADS
-      output$globalACS_ADSTable <- renderImage({
-        outfile <- tempfile(fileext = '.png')
-        png(outfile, width = 800, height = 600)
-        
-        # plot(graph_from_adjacency_matrix(result[[1]]), mode = "directed")
-        p(fit$s2_rna)
-        q(fit$s2_gene)
-        # p(108)
-        # q(462)
-        total <- p() + q()
-        single_igraph(adj_single=small, prob_single=fit$post.prob, 
-                      ncRNA_num=p(),
-                      single_graph_name="./plots/test_all.png") # call your visualization function
-        dev.off()
-        
-        # Return a list containing the file name
-        list(src = outfile,
-             contentType = 'image/png',
-             width = 800,
-             height = 600,
-             alt = "This is alternate text")
-      }, deleteFile = TRUE)
+  
       
       sendSuccessMessage(session, "Bayesian Network generated.")
     }, session)
@@ -115,106 +117,161 @@ saved_data_server <- function(input, output, session, ImProxy) {
     done(session)
   })
   
-  source("./internal_functions/network_partition.R")
-  
-  observeEvent(input$plotGlobalMDS, {
-    wait(session, "Generating Modules")
+
+  ########## modulization ##########
+  observeEvent(input$butt_mod, {
     
-    try({
-      pos_small <- (rowSums(adj_mat())>0 | colSums(adj_mat())>0)
-      result <- partition(adj_mat(), post_prob()[pos_small, pos_small], p())
+    mat_post_sub <- post_prob()
+    p2 <- shared_var$p2
+    q2 <- shared_var$q2
+    print(paste("p2=", p2, sep=""))
+    print(paste("q2=", q2, sep=""))
+    
+    # result <- partition(adj_mat(), post_prob()[pos_innet, pos_innet], p())
+    ## network partition
+    g1 <- graph_from_adjacency_matrix(adj_mat(), mode="undirected")
+    set.seed(1234)
+    fit_lou <- cluster_louvain(g1, resolution=1)
+    grp_idx <- as.numeric(names(sort(table(fit_lou$membership), 
+                                     decreasing = T))) ## group name in descending order
+    grp_idx <- grp_idx[as.numeric(sort(table(fit_lou$membership), 
+                                       decreasing = T))>=5] ## only keep modules with size larger than 10
+    shared_var$fit_lou <- fit_lou
+    shared_var$grp_idx <- grp_idx
+    print(paste("length of membership is", length(fit_lou$membership)))
+    print(fit_lou$membership)
+    print(grp_idx)
+    
+    ## only visualize a subset of modules 
+    m <- tmp <- 0
+    mod_size <- as.numeric(sort(table(fit_lou$membership), decreasing = T))
+    while (tmp<100 & m<length(mod_size)) {
+      m <- m+1
+      tmp <- sum(mod_size[1:m])
+    } ## take up to 100 nodes
+    if(tmp>100) {m <- m-1}
+    print(m) 
+    
+    ## reorder nodes within modules (later)
+    # ncord <- geord <- ncsep <- gesep <- NULL
+    # for (i in 1:m) {
+    #   pos_nc <- intersect(which(fit_lou$membership==grp_idx[i]), 1:p2)
+    #   pos_ge <- intersect(which(fit_lou$membership==grp_idx[i]), (p2+1):(p2+q2))
+    #   
+    #   post_mod <- mat_post_sub[pos_nc, pos_ge]
+    # 
+    #   fitp <- pheatmap(post_mod, cluster_rows = T, cluster_cols = T, fontsize_row=5, fontsize_col=5,
+    #                    color = colorRampPalette(c("white","red4"))(50), silent=T)
+    #   
+    #   ncord <- c(ncord, rownames(post_mod)[fitp$tree_row$order])
+    #   geord <- c(geord, colnames(post_mod)[fitp$tree_col$order])
+    #   ncsep <- c(ncsep, length(ncord))
+    #   gesep <- c(gesep, length(geord))
+    # }
+    
+    ## not reordering 
+    ncord <- geord <- ncsep <- gesep <- NULL
+    mat_node <- NULL
+    for (i in 1:m) {
+      pos_nc <- intersect(which(fit_lou$membership==grp_idx[i]), 1:p2)
+      pos_ge <- intersect(which(fit_lou$membership==grp_idx[i]), (p2+1):(p2+q2))
       
-      l <- as.list(seq(1,length(result$grp_idx)))
-      observe({
-        updateSelectInput(session, "measure",
-                          label = "Select a module",
-                          choices = l,
-                          selected = l[1])
-      })
+      ncord <- c(ncord, rownames(mat_post_sub)[pos_nc])
+      geord <- c(geord, colnames(mat_post_sub)[pos_ge])
+      ncsep <- c(ncsep, length(ncord))
+      gesep <- c(gesep, length(geord))
       
-      output$globalMdsFig <- renderImage({
-        # A temp file to save the output.
-        # This file will be removed later by renderImage
-        outfile <- tempfile(fileext = '.png')
-        # Generate the PNG
-        png(outfile, width = 800, height = 600)
-        # p=6 # determine how many ncRNA in the matrix first # first 6 rows
-        # early_late_igraph(adj_early,adj_late,prob_early,prob_late,ncRNA_num=p,early_graph_name="early_edge_color_graph2.jpeg",late_graph_name="late_edge_color_graph2.jpeg")
-        # single_igraph(adj_single=result[[1]], prob_single=matrix(0.5, p()+q(), p()+q()), 
-        #               ncRNA_num=p(),
-        #               single_graph_name="./plots/modulex.png") # call your visualization function
-        # plot(graph_from_adjacency_matrix(result[[1]]), mode = "directed")
-        # total <- size()
-        # single_igraph(adj_single=result[[as.numeric(input$measure)]],
-        #               prob_single=matrix(0.5, total, total), 
-        #               ncRNA_num=p()/2,
-        #               single_graph_name="./plots/test_all.png")
-        ## Then we can visualize
-        ## Note that in the GUI drop-down of (module 1,2,3,...), we actually wants it to visualize
-        ##    the largest, second-largest, third-largest modules, etc. It is NOT the "1" as 
-        ##    in the fit_lou$membership. Something like:
-        idx <- result$grp_idx[1]
-        adj_single <- result$adj[which(result$fit==idx), which(result$fit==idx)]
-        prob_single <- result$mat_post[which(result$fit==idx), which(result$fit==idx)]
-        a1 <- length(intersect(which(result$fit==idx), 1:result$p)) ## number of ncRNAs in this module
-        
-        ## NOTE: modify the visualization function accordingly
-        single_igraph(adj_single=adj_single, prob_single=prob_single, ncRNA_num=a1, 
-                      single_graph_name="modify_the_graph_name.jpeg")
-        dev.off()
-        
-        # Return a list containing the filename
-        list(src = outfile,
-             contentType = 'image/png',
-             width = 800,
-             height = 600,
-             alt = "This is alternate text")
-      }, deleteFile = TRUE)
+      ## for node names table
+      tmp1 <- rownames(mat_post_sub)[pos_nc]
+      tmp2 <- colnames(mat_post_sub)[pos_ge]
+      new_mat <- cbind(rep(paste("Module",i), length(tmp1)+length(tmp2)), 
+                       c(tmp1, tmp2),
+                       c(rep("ncRNA",length(tmp1)), rep("gene",length(tmp2))))
+      mat_node <- rbind(mat_node, new_mat)
+      if (i<m) {mat_node <- rbind(mat_node, c(rep(" ",3)))} ## for separating modules
+    }
+    colnames(mat_node) <- c("Module", "Node name", "Node type")
+
+    
+    post_mod <- mat_post_sub[match(ncord, colnames(mat_post_sub)), 
+                             match(geord, colnames(mat_post_sub))]
+    
+    output$heatmap <- renderPlot({
+      pheatmap(post_mod, cluster_rows = F, cluster_cols = F, fontsize_row=8, fontsize_col=8,
+               color = colorRampPalette(c("#f4f5f4", "#b2182b"))(50), border_color="black",
+               gaps_row=ncsep, gaps_col=gesep, angle_col=315) # fontsize 3-6
       
-      sendSuccessMessage(session, "Graphs are generated.")
-    }, session)
+    })
+    
+    output$table_node <- renderTable(mat_node, striped=TRUE)
     
     observe({
       updateTabsetPanel(session, "tabSelect",
                         selected = "panel2")
     })
+    
+    
+  })
+  
+  
+  
+  ########## module visulization (igraph) ##########
+  observeEvent(input$butt_mod, {
+    # wait(session, "Generating Modules")
+    
+    ## update drop-down input
+    # try({
+      # pos_innet <- (rowSums(adj_mat())>0 | colSums(adj_mat())>0)
+      # result <- partition(adj_mat(), post_prob()[pos_innet, pos_innet], p())
+    fit_lou <- shared_var$fit_lou 
+    grp_idx <- shared_var$grp_idx
+    mat_post_sub <- post_prob()
+    dag_sub <- adj_mat()
+    p2 <- shared_var$p2
+    q2 <- shared_var$q2
+    
+    l <- as.list(seq(1,length(grp_idx)))
+    observe({
+      updateSelectInput(session, "sel_mod",
+                        label = "Select a module to display",
+                        choices = l,
+                        selected = l[1])
+      })
+    
+    output$network_visual <- renderPlot({
+      # # A temp file to save the output.
+      # # This file will be removed later by renderImage
+      # outfile <- tempfile(fileext = '.png')
+      # # Generate the PNG
+      # png(outfile, width = 800, height = 600)
+      
+      idx <- grp_idx[as.numeric(input$sel_mod)]
+      pos_node <- which(fit_lou$membership==idx) ## position of nodes in this module
+      adj_single <- dag_sub[pos_node, pos_node]
+      prob_single <- mat_post_sub[pos_node, pos_node]
+      a1 <- length(intersect(pos_node, 1:p2)) ## number of ncRNAs in this module
+      
+      ## NOTE: modify the visualization function accordingly
+      single_igraph(adj_single=adj_single, prob_single=prob_single, ncRNA_num=a1,
+                    single_graph_name="modify_the_graph_name.jpeg")
+      # dev.off()
+      
+      # Return a list containing the filename
+      # list(src = outfile,
+      #      contentType = 'image/png',
+      #      width = 800,
+      #      height = 600,
+      #      alt = "This is alternate text")
+    })#, deleteFile = TRUE)
+    
+    
+    observe({
+      updateTabsetPanel(session, "tabSelect",
+                        selected = "panel3")
+    })
     done(session)
   })
   
-  observeEvent(input$measure, {
-    if (!is.null(adj_mat())) {
-      wait(session, "Generating Graphs")
-      
-      try({
-        pos_small <- (rowSums(adj_mat())>0 | colSums(adj_mat())>0)
-        result <- partition(adj_mat(), post_prob()[pos_small, pos_small], p())
-        
-        output$globalMdsFig <- renderImage({
-          # A temp file to save the output.
-          # This file will be removed later by renderImage
-          outfile <- tempfile(fileext = '.png')
-          # Generate the PNG
-          png(outfile, width = 800, height = 600)
-          # plot(graph_from_adjacency_matrix(partitions[[as.numeric(input$measure)]]), mode = "directed")
-          idx <- result$grp_idx[as.numeric(input$measure)]
-          adj_single <- result$adj[which(result$fit==idx), which(result$fit==idx)]
-          prob_single <- result$mat_post[which(result$fit==idx), which(result$fit==idx)]
-          a1 <- length(intersect(which(result$fit==idx), 1:result$p)) ## number of ncRNAs in this module
-          
-          ## NOTE: modify the visualization function accordingly
-          single_igraph(adj_single=adj_single, prob_single=prob_single, ncRNA_num=a1, 
-                        single_graph_name="modify_the_graph_name.jpeg")
-          dev.off()
-    
-          # Return a list containing the filename
-          list(src = outfile,
-               contentType = 'image/png',
-               width = 800,
-               height = 600,
-               alt = "This is alternate text")
-        }, deleteFile = TRUE)
-      }, session)
-      done(session)
-    }
-  }, label = "module selection")
+  # end
+  
 }
