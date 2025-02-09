@@ -17,6 +17,7 @@ library(MASS) ## ginv() from rpcor()
 library(BiDAG) ## sampleBN()
 library(CCA) ## cc()
 library(CCP) ## p.asym()
+library(pheatmap)
 
 ## FUNCTION: main function for running our two-stage Bayesian Network learning algorithm 
 ## Input:
@@ -134,10 +135,10 @@ bn.main <- function(X, Y, alpha=1e-5) {
   dag_our[c(pos_actx, p+pos_acty), c(pos_actx, p+pos_acty)] <- as.matrix(getDAG(fit_our))
   
   ## get posterior 
-  post_prob <- matrix(0, p+q, p+q)
-  post_prob[c(pos_actx, p+pos_acty), 
-            c(pos_actx, p+pos_acty)] <- edgep(fit_our, pdag = FALSE, burnin = 0.2, endstep = 1)
-  
+  # post_prob <- matrix(0, p+q, p+q)
+  # post_prob[c(pos_actx, p+pos_acty), 
+  #           c(pos_actx, p+pos_acty)] <- edgep(fit_our, pdag = FALSE, burnin = 0.2, endstep = 1)
+
   ## NOTE: print these information after stage 2 (on the right panel)
   print(paste("Final network has", sum(dag_our[1:p,(p+1):(p+q)]), 
               " level-1 edges and ", sum(dag_our[(p+1):(p+q), (p+1):(p+q)]), 
@@ -147,14 +148,46 @@ bn.main <- function(X, Y, alpha=1e-5) {
   print(paste("Involving ", sum(rowSums(dag_our[1:p,])>0), " ncRNAs and ", 
               tmp, " genes"))
   
-  return(list(fit=fit_our, adj=dag_our, post.prob=post_prob, s1_lvl1 = sum(adj_xy),
-              s1_lvl2 = sum(adj_yy)/2, s1_rna = p1, s1_gene = q1,
+  ## post run
+  ## output edges pairs
+  dag_sub <- as.matrix(getDAG(fit_our))
+  pos_innet <- (rowSums(dag_sub)>0 | colSums(dag_sub)>0)
+  p2 <- sum(pos_innet[1:p1])
+  q2 <- sum(pos_innet[(p1+1):(p1+q1)])
+  dag_sub2 <- dag_sub[pos_innet, pos_innet]
+  ## get posterior 
+  mat_post <- edgep(fit_our, pdag = FALSE, burnin = 0.2, endstep = 1) ## posterior matrix (p1*q1)
+  mat_post2 <- mat_post[pos_innet, pos_innet]
+  ## based on dag_sub2
+  data <- cbind(X, Y)
+  # colnames(data) <- c(ncname, gname)
+  
+  out1 <- NULL # matrix(0, nrow(adj_early), ncol(adj_early))
+  for (i in 1:nrow(dag_sub2)) {
+    for (j in 1:ncol(dag_sub2)) {
+      if (dag_sub2[i,j]!=0) {
+        marg_cor <- cor(data[,which(colnames(data)%in%colnames(dag_sub2)[c(i,j)])])[2]
+        # marg_cor <- 0.5
+        reg_dir <- ifelse(marg_cor>0, "up", "down")
+        lvl <- ifelse(i<=p2, "L1", "L2")
+        out1 <- rbind(out1, c(colnames(dag_sub2)[c(i,j)], 
+                              round(mat_post2[i,j],3), reg_dir, lvl))
+      }
+    }
+  }
+  colnames(out1) <- c("Regulator", "Target", "Posterior", "Direction","Type")
+  
+  
+  return(list(fit=fit_our, adj=dag_sub, post.prob=mat_post, 
+              s1_rna = p1, s1_gene = q1,
               s2_lvl1 = sum(dag_our[1:p,(p+1):(p+q)]),
               s2_lvl2 = sum(dag_our[(p+1):(p+q), (p+1):(p+q)]), 
-              s2_rna = sum(rowSums(dag_our[1:p,])>0), s2_gene = tmp))
+              s2_rna = sum(rowSums(dag_our[1:p,])>0), s2_gene = tmp,
+              mat_pair=out1))
 }
 
-
+# s1_lvl1 = sum(adj_xy),
+# s1_lvl2 = sum(adj_yy)/2, s1_rna = p1, s1_gene = q1,
 
 #################### internal functions for bn.main() ####################
 
