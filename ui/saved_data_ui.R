@@ -41,7 +41,7 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                  textInput(ns("baseline"), label="Enter the reference level:",
                            placeholder="Enter reference level name...")
                ),
-               actionButton(ns('ACS_ADS'), 'Run CAR-NET',
+               actionButton(ns('run_algo'), 'Run CAR-NET',
                             class="btn-success",icon = icon("play")),
                selectInput(ns("pathway_select"),
                            label="Select pathways to work on (multiple):",
@@ -111,7 +111,8 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                            tabPanel(value = "panel1",
                                     h3("Overview of the full network"),
                                     verbatimTextOutput(ns("text")),
-                                    tableOutput(ns("table_pair"))),
+                                    tableOutput(ns("table_pair")),
+                                    plotOutput(ns("path_plot_all"))),
                            tabPanel(value = "panel2",
                                     h3("Modulization"),
                                     plotOutput(ns("heatmap"), width = "1000px", height = "800px"),
