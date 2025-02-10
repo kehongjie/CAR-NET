@@ -46,8 +46,8 @@ adj.generator <- function(p, q, l1, l2) {
 ######################################################################
 
 
-single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pink",gene_node_color="slategray1",
-                                        gene_to_gene_color="tan1",ncRNA_to_gene_color="darkgray",
+single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="#ffc000",gene_node_color="#01b0f0",
+                                        gene_to_gene_color="darkgray",ncRNA_to_gene_color="darkgray",
                                         save_graph_location=getwd(),single_graph_name="single_edge_color_graph.jpeg"){
   
   # make sure prob_single has weight numbers, + 0.2 for each matrix value
@@ -61,7 +61,8 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   # Determine node type, color, and shape from adj_single
   node_type <- c(rep("ncRNA", ncRNA_num), rep("gene", ncol(adj_single) - ncRNA_num))
   node_color <- ifelse(node_type == "ncRNA", ncRNA_node_color, gene_node_color)
-  node_shape <- ifelse(node_type == "ncRNA", "square", "circle")
+  # node_shape <- ifelse(node_type == "ncRNA", "square", "circle")
+  node_shape <- rep("circle", length(node_type)) ## all circle shape 
   
   # Determine edge colors based on source and target vertex types
   ecolor_single <- sapply(E(g_single), function(e) {
@@ -102,13 +103,18 @@ single_igraph <- function(adj_single,prob_single,ncRNA_num,ncRNA_node_color="pin
   
   setwd(save_graph_location)
   # Plot graph from adj_early with edge colors based on combined_adjacency
-  # tiff(single_graph_name, units = "in", width = 13, height = 10, res = 150)
+  # tiff(single_graph_name, units = "in", width = 10, height = 10, res = 150)
   plot(g_single, vertex.color = node_color, vertex.shape = node_shape, layout = layout_with_fr(g_single),
        vertex.label.color = "black", layout = layout_with_kk, edge.arrow.size = edge.arrow.size, 
-       edge.color = ecolor_single, edge.width = edge.width_num*ewidth_single, vertex.size = vertex.size,vertex.label.cex = vertex.label.cex) 
-  f <- factor(levels = c("ncRNA Node", "gene Node", "gene to gene", "ncRNA to gene"), ordered = TRUE)
-  vcols <- c("pink", "slategray1", "tan1", "darkgray")
-  legend("topleft", legend = levels(f), pch = 16, col = vcols, bty = "n")
+       edge.color = ecolor_single, edge.width = edge.width_num*ewidth_single, 
+       vertex.size = vertex.size,vertex.label.cex = vertex.label.cex) 
+  
+  # f <- factor(levels = c("ncRNA Node", "gene Node", "gene to gene", "ncRNA to gene"), ordered = TRUE)
+  # vcols <- c("pink", "slategray1", "tan1", "darkgray")
+  f <- factor(levels = c("ncRNA node", "gene node"), ordered = TRUE)
+  vcols <- c(ncRNA_node_color, gene_node_color)
+  legend("topleft", legend = levels(f), pch = 19, col = vcols, bty = "n")
+  
   # dev.off()
 }
 
