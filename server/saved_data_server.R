@@ -30,9 +30,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
   source("./internal_functions/gui_filter.R")
   source("./internal_functions/single-adj_different_size.r")
   source("./internal_functions/network_partition.R")
+  source("./internal_functions/run_pathway.R")
   
   ########## run BN and overview ##########
-  observeEvent(input$ACS_ADS, {
+  observeEvent(input$run_algo, {
     wait(session, "Generating Bayesian Network, may take a while")
     path_old <- getwd()
     try({
@@ -51,6 +52,9 @@ saved_data_server <- function(input, output, session, ImProxy) {
       df <- df[-1,]
       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
       Y <- as.matrix(internal_filter(df, ImProxy$cutoff_gene)[1][[1]])
+      
+      shared_var$X <- X
+      shared_var$Y <- Y
       
       # x <- read.csv("./data/TCGA_KIRP_early_lncRNA_top5per.csv", header=T)
       # rownames(x) <- x[,1]
@@ -117,7 +121,26 @@ saved_data_server <- function(input, output, session, ImProxy) {
     done(session)
   })
   
-
+  ########## pathway analysis for all genes in the network ##########
+  observeEvent(input$pathway_all, {
+    p2 <- shared_var$p2
+    q2 <- shared_var$q2
+    
+    gene_list <- colnames(adj_mat)[(p2+1):(p2+q2)]
+    bg <- colnames(shared_var$Y)
+    
+    output$path_plot_all <- renderPlot({
+      run.path(gene.list=gene_list, background=bg)
+    })
+    
+    observe({
+      updateTabsetPanel(session, "tabSelect",
+                        selected = "panel1")
+    })
+    
+  }) 
+  
+  
   ########## modulization ##########
   observeEvent(input$butt_mod, {
     
@@ -150,7 +173,8 @@ saved_data_server <- function(input, output, session, ImProxy) {
       tmp <- sum(mod_size[1:m])
     } ## take up to 100 nodes
     if(tmp>100) {m <- m-1}
-    print(m) 
+    print(paste("m=",m,sep="")) 
+    print(mod_size)
     
     ## reorder nodes within modules (later)
     # ncord <- geord <- ncsep <- gesep <- NULL
@@ -188,7 +212,8 @@ saved_data_server <- function(input, output, session, ImProxy) {
                        c(tmp1, tmp2),
                        c(rep("ncRNA",length(tmp1)), rep("gene",length(tmp2))))
       mat_node <- rbind(mat_node, new_mat)
-      if (i<m) {mat_node <- rbind(mat_node, c(rep(" ",3)))} ## for separating modules
+      if (i<m) {mat_node <- rbind(mat_node, c(rep(" ",3)), 
+                                  c(rep(" ",3)))} ## for separating modules
     }
     colnames(mat_node) <- c("Module", "Node name", "Node type")
 
