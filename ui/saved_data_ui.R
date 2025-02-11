@@ -51,7 +51,7 @@ saved_data_ui <- function(id, label = "saved data of single study or multiple st
                                           "Biocarta"=4),
                            multiple=TRUE),
                actionButton(ns("pathway_all"),
-                            'B2: Do pathway analysis for all genes in the network',
+                            'Do pathway analysis for all genes in the network',
                             class="btn-success",
                             icon = icon("play")),
                hr(),
