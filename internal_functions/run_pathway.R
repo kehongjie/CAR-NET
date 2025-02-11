@@ -50,7 +50,8 @@ run.path <- function(gene.list, background, path.interest=NULL) {
 
 ######### internal functions for run.path ########## 
 
-path.fisher <- function(x, background, pathway, d=0) {
+## d: only ouput top-d pathways
+path.fisher <- function(x, background, pathway, d=10) {
   if(d==0) {d <- length(pathway)}
   
   x<-toupper(x)
@@ -95,14 +96,12 @@ path.fisher <- function(x, background, pathway, d=0) {
   match_gene_list <- match_gene_list[order_by_pval]
   
   path_size <- as.numeric(result[,"Selected_in_path"]+result[,"NonSele_in_path"])
-  pos_size <- which(path_size>=5 & path_size<=100)
-  pos_pval <- which(result[,"pvalue"]<0.05)
-  # pos_pval <- order(result[,"pvalue"])[1:10] ## temporary 
+  pos_size <- which(path_size>=5 & path_size<=100) ## 5&100
+  pos_pval <- which(result[,"pvalue"]<0.05) ## 0.05
+  # pos_pval <- pos_size <- c(1:nrow(result)) ## for very small test data set, use this line
   result <- result[intersect(pos_size,pos_pval),]
   match_gene_list <- match_gene_list[intersect(pos_size,pos_pval)]
   result[,"pvalue"] <- round(result[,"pvalue"], 5)
-  # result <- result[1:d,]
-  # match_gene_list <- match_gene_list[1:d]
   
   qvalue <- round(p.adjust(result[,"pvalue"], "BH"), 5)
   # result <- cbind(result, qvalue)
@@ -111,6 +110,9 @@ path.fisher <- function(x, background, pathway, d=0) {
                        qvalue=qvalue, 
                        gene=as.vector(sapply(match_gene_list, function(x) paste(x,collapse=";"))))
   rownames(result) <- NULL
+  d <- min(nrow(result), d) ## show top d pathways
+  result <- result[1:d,] ## temporary
+  # match_gene_list <- match_gene_list[1:d]
   
   # pval_table <- cbind(rownames(result), result)
   # colnames(pval_table)[1] <- "pathway"
