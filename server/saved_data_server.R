@@ -126,8 +126,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
     p2 <- shared_var$p2
     q2 <- shared_var$q2
     
-    gene_list <- colnames(adj_mat)[(p2+1):(p2+q2)]
+    gene_list <- colnames(adj_mat())[(p2+1):(p2+q2)]
     bg <- colnames(shared_var$Y)
+    print(paste(length(gene_list), "genes in the network"))
+    print(paste(length(bg), "genes in the background"))
     
     output$path_plot_all <- renderPlot({
       run.path(gene.list=gene_list, background=bg)
