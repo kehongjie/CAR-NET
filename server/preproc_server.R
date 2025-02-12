@@ -12,7 +12,8 @@ preproc_server <- function(input, output, session) {
   # 0 = LNCipedia, 1 = ENSG , 2 = HSALN, 3 = HGNC
   RNA_type <- reactiveVal()   # type of original RNA data (micro or long non-coding)
   gene_name <- reactiveVal()  # naming format of original gene data
-
+  lnc_mat <- reactiveVal()
+  rna_mat <- reactiveVal()
   
   ##########################
   # Observers              #
@@ -24,10 +25,11 @@ preproc_server <- function(input, output, session) {
   
   # mean filter function
   internal_filter = function(M, fence){
-    df = t(M)
-    avg_df = apply(df, 2, mean)
+    df = M
+    avg_df = apply(df, 1, mean)
     ind = avg_df < fence
-    return(list(t(df[,!ind, drop = FALSE]), ind))
+    #return(list(df[,!ind, drop = FALSE], ind))
+    return(list(df[!ind, ], ind))
   }
   
   # variance filter function
@@ -61,7 +63,7 @@ preproc_server <- function(input, output, session) {
   })
   
   
-  ## submit button -----
+  ## lncRNA submit button -----
   observeEvent(input$submit_btn, {
     filePath <- input$ncRNA_file
     fileText <- read.csv(filePath$datapath, check.names = F, row.names = 1)
@@ -76,10 +78,12 @@ preproc_server <- function(input, output, session) {
     
     if(plat == 2 ){
       df_f <- internal_filter_zero(df,input$zero)
-      df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      #df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      df_f <- internal_filter(df, mean_threshold)[[1]]
       df_f <- internal_filter_var(df,variance_threshold) 
     }else if(plat == 1){
-      df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      #df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
+      df_f <- internal_filter(df, mean_threshold)[[1]]
       df_f <- internal_filter_var(df,variance_threshold) 
     }
     
@@ -88,6 +92,7 @@ preproc_server <- function(input, output, session) {
     }
     
     df <- t(df_f)
+    genes <- rownames(df_f)
     if(val2 == 2){ # lncRNA
       ENSG_ids <- c()
       if(val == 0){ # LNCipedia
@@ -121,8 +126,9 @@ preproc_server <- function(input, output, session) {
       colnames(df) <- ENSG_ids
       names_rna(ENSG_ids)
     }
+    vals$filtered_ncRNA_data <- t(df)
     output$ncRNA_file <- DT::renderDataTable({
-      t(df)
+      vals$filtered_ncRNA_data
     })
   }, label="Filter lncRNA data.")
   
@@ -130,9 +136,13 @@ preproc_server <- function(input, output, session) {
 # watch for filter for gene expression------------
   
   observeEvent(input$submit_btn_gene, {
+    #browser() 
     filePath <- input$gene_file
     fileText <- read.csv(filePath$datapath, check.names = FALSE,row.names = 1)
     df <- fileText
+    mean_threshold_gene <- as.numeric(input$gene_mean)
+    variance_threshold_gene <- as.numeric(input$gene_variance)
+    zero_threshold_gene <- input$gene_zero
     val <- input$name_gene
     plat_g <- input$gene_platform
     log2_g <- input$gene_log2_transformation
@@ -151,18 +161,19 @@ preproc_server <- function(input, output, session) {
     }
     
     if(plat_g == 2 ){
-      df_f <- internal_filter_zero(df,input$zero)
-      df_f <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
-      df_f <- internal_filter_var(df,input$gene_variance) 
+      df_f <- internal_filter_zero(df,zero_threshold_gene)
+      df_f <- internal_filter(df, mean_threshold_gene)[[1]]
+      df_f <- internal_filter_var(df,variance_threshold_gene) 
     }else if(plat_g == 1){
-      df_f <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
-      df_f <- internal_filter_var(df,input$gene_variance) 
+      df_f <- internal_filter(df, mean_threshold_gene)[[1]]
+      df_f <- internal_filter_var(df,variance_threshold_gene) 
     }
     if(log2_g == 2){
       df_f <- log2(df_f+1)
     }
+    vals$filtered_gene_data <- df_f
     output$gene_file <- DT::renderDataTable({
-      df_f
+      vals$filtered_gene_data
     })
   },label="Filter gene expression data")
   
@@ -173,101 +184,100 @@ preproc_server <- function(input, output, session) {
   # FILE UPLOAD-----
   
   # watch for ncRNA expression files upload-----
-  observeEvent(input$ncRNA_file, {
-   # browser() 
-    if (!is.null(input$ncRNA_file)) {
-      output$ncRNA_file <- DT::renderDataTable({
-        filePath <- input$ncRNA_file
-        fileText <- read.csv(filePath$datapath, check.names = FALSE)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- as.data.frame(internal_filter(df, input$mean)[1], check.names = FALSE)
-        genes <- colnames(df)
-        names_rna(genes)
-        val <- isolate(input$name_ncRNA)
-        ncRNA_name(val)
-        val2 <- isolate(input$RNA_type)
-        RNA_type(val2)
-        
-        if (val2 == 2) {
-          ENSG_ids <- c()
-          if (val == 0) {
-            ENSG_ids <- colnames(df)
-          } else if (val == 1) {
-            ref <- read.csv("./data/reference/ENSG_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$ENSG) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 2) {
-            ref <- read.csv("./data/reference/HSAL_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HSAL) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          } else if (val == 3) {
-            ref <- read.csv("./data/reference/HGNC_lnci.csv")
-            for (gene in genes) {
-              if (gene %in% ref$HGNC) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
-              } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-              }
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_rna(ENSG_ids)
-        }
-        t(df)
-      })
-    } else {
-      return(NULL)
-    }
-  }, label="ncRNA file upload")
+  # observeEvent(input$ncRNA_file, {
+  #   if (!is.null(input$ncRNA_file)) {
+  #     output$ncRNA_file <- DT::renderDataTable({
+  #       filePath <- input$ncRNA_file
+  #       fileText <- read.csv(filePath$datapath, check.names = FALSE)
+  #       df <- t(fileText)
+  #       colnames(df) <- df[1,]
+  #       df <- df[-1,]
+  #       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+  #       #df <- as.data.frame(internal_filter(df, input$mean)[1], check.names = FALSE)
+  #       genes <- colnames(df)
+  #       names_rna(genes)
+  #       val <- isolate(input$name_ncRNA)
+  #       ncRNA_name(val)
+  #       val2 <- isolate(input$RNA_type)
+  #       RNA_type(val2)
+  #       
+  #       if (val2 == 2) {
+  #         ENSG_ids <- c()
+  #         if (val == 0) {
+  #           ENSG_ids <- colnames(df)
+  #         } else if (val == 1) {
+  #           ref <- read.csv("./data/reference/ENSG_lnci.csv")
+  #           for (gene in genes) {
+  #             if (gene %in% ref$ENSG) {
+  #               ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
+  #             } else {
+  #               ENSG_ids <- c(ENSG_ids, gene)
+  #             }
+  #           }
+  #         } else if (val == 2) {
+  #           ref <- read.csv("./data/reference/HSAL_lnci.csv")
+  #           for (gene in genes) {
+  #             if (gene %in% ref$HSAL) {
+  #               ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
+  #             } else {
+  #               ENSG_ids <- c(ENSG_ids, gene)
+  #             }
+  #           }
+  #         } else if (val == 3) {
+  #           ref <- read.csv("./data/reference/HGNC_lnci.csv")
+  #           for (gene in genes) {
+  #             if (gene %in% ref$HGNC) {
+  #               ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
+  #             } else {
+  #               ENSG_ids <- c(ENSG_ids, gene)
+  #             }
+  #           }
+  #         }
+  #         colnames(df) <- ENSG_ids
+  #         names_rna(ENSG_ids)
+  #       }
+  #       t(df)
+  #     })
+  #   } else {
+  #     return(NULL)
+  #   }
+  # }, label="ncRNA file upload")
   
   # watch for gene expression file upload------
-  observeEvent(input$gene_file, {
-    if (!is.null(input$gene_file)) {
-      output$gene_file <- DT::renderDataTable({
-        filePath <- input$gene_file
-        fileText <- read.csv(filePath$datapath)
-        df <- t(fileText)
-        colnames(df) <- df[1,]
-        df <- df[-1,]
-        df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-        df <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
-        ref <- read.csv("./data/reference/ENSG_HGNC.csv")
-        genes <- colnames(df)
-        gene_name(isolate(input$name_gene))
-        names_gene(genes)
-        
-        if (isolate(input$name_gene) == 1) {
-          ENSG_ids <- c()
-          for (gene in genes) {
-            if (gene %in% ref$Ensembl_gene_ID) {
-              ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
-            } else {
-              ENSG_ids <- c(ENSG_ids, gene)
-            }
-          }
-          colnames(df) <- ENSG_ids
-          names_gene(ENSG_ids)
-        }
-        
-        t(df)
-      })
-    } else {
-      return(NULL)
-    }
-  }, label="gene file upload")
+  # observeEvent(input$gene_file, {
+  #   if (!is.null(input$gene_file)) {
+  #     output$gene_file <- DT::renderDataTable({
+  #       filePath <- input$gene_file
+  #       fileText <- read.csv(filePath$datapath)
+  #       df <- t(fileText)
+  #       colnames(df) <- df[1,]
+  #       df <- df[-1,]
+  #       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
+  #       #df <- as.data.frame(internal_filter(df, input$gene_mean)[1], check.names = FALSE)
+  #       ref <- read.csv("./data/reference/ENSG_HGNC.csv")
+  #       genes <- colnames(df)
+  #       gene_name(isolate(input$name_gene))
+  #       names_gene(genes)
+  #       
+  #       if (isolate(input$name_gene) == 1) {
+  #         ENSG_ids <- c()
+  #         for (gene in genes) {
+  #           if (gene %in% ref$Ensembl_gene_ID) {
+  #             ENSG_ids <- c(ENSG_ids, ref$Approved_symbol[which(ref$Ensembl_gene_ID == gene)])
+  #           } else {
+  #             ENSG_ids <- c(ENSG_ids, gene)
+  #           }
+  #         }
+  #         colnames(df) <- ENSG_ids
+  #         names_gene(ENSG_ids)
+  #       }
+  #       
+  #       t(df)
+  #     })
+  #   } else {
+  #     return(NULL)
+  #   }
+  # }, label="gene file upload")
 
   # watch for clinical file upload
   observeEvent(input$clinical_file, {
@@ -290,6 +300,6 @@ preproc_server <- function(input, output, session) {
   observe({vals$cutoff_gene <- input$cutoff_gene})
   observe({vals$names_rna <- names_rna()})
   observe({vals$names_gene <- names_gene()})
-  
+
   return(vals)
 }

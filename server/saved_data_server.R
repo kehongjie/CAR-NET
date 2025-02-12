@@ -20,7 +20,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
   q <- reactiveVal()  # number of genes
   
   shared_var <- reactiveValues()
-  
   ##########################
   # Observers              #
   ##########################
@@ -43,7 +42,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
       colnames(df) <- df[1,]
       df <- df[-1,]
       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-      X <- as.matrix(internal_filter(df, ImProxy$cutoff_ncRNA)[1][[1]])
+      #browser()
+      X <- df
+      #X <- t(ImProxy$filtered_ncRNA_data)
+      
       #
       filePath2 <- ImProxy$file2
       fileText2 <- read.csv(filePath2$datapath, check.names = FALSE)
@@ -51,8 +53,9 @@ saved_data_server <- function(input, output, session, ImProxy) {
       colnames(df) <- df[1,]
       df <- df[-1,]
       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
-      Y <- as.matrix(internal_filter(df, ImProxy$cutoff_gene)[1][[1]])
-      
+      Y <- t(ImProxy$filtered_gene_data)
+      #Y <- df 
+      browser()
       shared_var$X <- X
       shared_var$Y <- Y
       
