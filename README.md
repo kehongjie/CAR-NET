@@ -1,10 +1,7 @@
-# NGRN
+# CAR-NET
+CAR-NET is a RShiny-based application with graphical user interface (GUI) for inferring non-coding RNA regulatory network from transcriptomic data and curated database. This application took input of both ncRNA and gene expression data generated from either bulk or single-cell RNA-seq and incorporated a list of downloaded curated databases for users to choose based on the type of ncRNA and the condition/disease of interest. It includes a preparatory step to preprocess the expression data following the standard pipeline and major analytical steps to construct the ncRNA regulatory network, identify the differential network, detect network modules, and perform pathway analysis to facilitate the biological interpretation of the network findings. In addition, it provides visualization of the network/modules and downloadable graphical and tabular outputs. 
 
-## Development logs (for internal communication/documentation only)
-- July 14 (from Eric): Over the past 6 weeks, I've created a functional data preprocessing page whose output serves as the input to the analysis page. I implemented Zhangchi's data filter code, Hongjie's bayesian network and partition code, as well as Cindy's network visualization code. The RShiny can now generate a network visualization based on input data, as well as divide the network into individual modules. I hope that this serves as a useful template for further development.
-- June 19 (from Eric): I created a preliminary page for the data uploading/preprocessing with the options to change the ID/name of each ncRNA and gene based on a reference data set provided by Zhangchi, and to adjust the filter cutoff for the averages of each column. Test and reference data sets are uploaded under the data folder.
-- May 24 (from Hongjie): I set up our NGRN Rshiny using CAMO as a template, so I would recommend everyone first download and run the CAMO on your own computer to get a sense of how it works. After you get CAMO running, try to download and run our current version NGRN Rshiny (I pretty much only change the welcome page as of now). Next, we can all contribute, make changes accordingly and remove unnecessary parts.
-
+![Alt text](./flowchart.png)
 
 ## Below is the instruction for installing and running NGRN/CAMO
 #### Install the Shiny software
