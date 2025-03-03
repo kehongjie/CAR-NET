@@ -19,9 +19,6 @@ CAR-NET is a RShiny-based application with graphical user interface (GUI) for in
 2. Set the working directory of R to the directory which contains the Shiny project folder "CAR-NET-main" `setwd("path\_to\_Rshiny/")`.
 3. Run the code `shiny::runApp('CAR-NET-main', port=9987, launch.browser=T)` and the CAR-NET Shiny app will automatically open in your default browser.
 
-## Where to find the full tutorial 
-After starting CAMO, users need to select a local directory as the working directory in the Setting page before any analysis. Please refer to the full tutorial for details at xxx.
-
 ## Dependency packages 
 Before running CAR-NET, please make sure all dependency packages are installed. The following code for installing dependency pakcages can be used:
 ```R
@@ -41,5 +38,10 @@ Bioconductor.packages <- function(pkg){
 }
 Bioconductor.packages(c("DESeq2", "limma", "ConsensusClusterPlus", "pathview", "KEGGgraph", "KEGGREST", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "reactome.db"))
 ```
+
+## Where to find the full tutorial 
+Please refer to the full tutorial for details at xxx.
+
+
 
 
