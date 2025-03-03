@@ -3,15 +3,43 @@ CAR-NET is a RShiny-based application with graphical user interface (GUI) for in
 
 ![Alt text](./flowchart.png)
 
-## Below is the instruction for installing and running NGRN/CAMO
-#### Install the Shiny software
-1. Install the CAMO R package and dependency packages following the instruction at [https://github.com/CAMO-R/Rpackage](https://github.com/CAMO-R/Rpackage).
-2. Download the CAMO Shiny project at [https://github.com/CAMO-R/Rshiny](https://github.com/CAMO-R/Rshiny) by clicking on "code > Download ZIP" and extract to a local folder renamed as "Rshiny".
 
-#### Start the Shiny software
-1. Open "RunShiny.R" file in R console.
-2. Set the working directory of R to the directory "path\_to\_Rshiny/" which contains the Shiny project folder "Rshiny" saved above.
-3. Click on the "Run App" button.
-Note that the installation progress of R packages may take up to a few minutes. Please check the progress in R console and may need to select whether to update all/some/none packages. After all packages has been installed, the CAMO Shiny app will automatically open in your default browser.
+
+## Requirement
+* R >= 4.0.0
+* Rcpp >= 1.0.0
+* Shiny >= 1.0.0
+
+## Download the Shiny software
+1. Download the CAR-NET Shiny project at [https://github.com/kehongjie/CAR-NET](https://github.com/kehongjie/CAR-NET) by clicking on "code > Download ZIP".
+2. Unzip and extract to a local folder named "CAR-NET-main".
+
+## Start the Shiny software
+1. Open "RunShiny.R" file from the "CAR-NET-main" folder in R console.
+2. Set the working directory of R to the directory which contains the Shiny project folder "CAR-NET-main" `setwd("path\_to\_Rshiny/")`.
+3. Run the code `shiny::runApp('CAR-NET-main', port=9987, launch.browser=T)` and the CAR-NET Shiny app will automatically open in your default browser.
+
+## Where to find the full tutorial 
+After starting CAMO, users need to select a local directory as the working directory in the Setting page before any analysis. Please refer to the full tutorial for details at xxx.
+
+## Dependency packages 
+Before running CAR-NET, please make sure all dependency packages are installed. The following code for installing dependency pakcages can be used:
+```R
+## from CRAN
+CRAN.packages <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        install.packages(new.pkg, dependencies = TRUE)
+}
+CRAN.packages(c("devtools", "igraph", "gridExtra", "grid", "ggplot2", "gplots", "reticulate"))
+
+## from Bioconductor
+Bioconductor.packages <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        BiocManager::install(new.pkg, dependencies = TRUE)
+}
+Bioconductor.packages(c("DESeq2", "limma", "ConsensusClusterPlus", "pathview", "KEGGgraph", "KEGGREST", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "reactome.db"))
+```
 
 
