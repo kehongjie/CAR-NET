@@ -22,21 +22,21 @@ CAR-NET is a RShiny-based application with graphical user interface (GUI) for in
 ## Dependency packages 
 Before running CAR-NET, please make sure all dependency packages are installed. The following code for installing dependency pakcages can be used:
 ```R
+## from Bioconductor (run this first)
+Bioconductor.packages <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        BiocManager::install(new.pkg, dependencies = TRUE)
+}
+Bioconductor.packages(c("RBGL", "Rgraphviz", "graph"))
 ## from CRAN
 CRAN.packages <- function(pkg){
     new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
     if (length(new.pkg)) 
         install.packages(new.pkg, dependencies = TRUE)
 }
-CRAN.packages(c("devtools", "igraph", "gridExtra", "grid", "ggplot2", "gplots", "reticulate"))
+CRAN.packages(c("devtools", "igraph", "BiDAG", ", "ggplot2", "CCA", "CCP", "pheatmap", "MASS", "rainbow"))
 
-## from Bioconductor
-Bioconductor.packages <- function(pkg){
-    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-    if (length(new.pkg)) 
-        BiocManager::install(new.pkg, dependencies = TRUE)
-}
-Bioconductor.packages(c("DESeq2", "limma", "ConsensusClusterPlus", "pathview", "KEGGgraph", "KEGGREST", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "reactome.db"))
 ```
 
 ## Where to find the full tutorial 
