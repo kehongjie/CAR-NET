@@ -1,5 +1,5 @@
 rm(list=ls())
-#Download R Shiny from github and extract it to a folder "NGRN_Rshiny". 
-#Set the working directory to be the path to the folder "NGRN_Rshiny".
+#Download R Shiny from github and extract it to a folder "CAR-NET-main". 
+#Set the working directory to be the path to the folder "CAR-NET-main".
 setwd("~/Documents/GitHub/")
-shiny::runApp('NGRN', port=9987, launch.browser=T)
+shiny::runApp('CAR-NET-main', port=9987, launch.browser=T)
