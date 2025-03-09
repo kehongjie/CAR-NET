@@ -1,7 +1,7 @@
 installed <- installed.packages()[,"Package"]
 
 shinyUI(
-  navbarPage("NGRN", id="nav",
+  navbarPage("CAR-NET", id="nav",
     header=tagList(
       # tags$div(id="working-dir",
       #   tagList(
