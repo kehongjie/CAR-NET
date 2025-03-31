@@ -40,7 +40,7 @@ CRAN.packages(c("devtools", "igraph", "BiDAG", ", "ggplot2", "CCA", "CCP", "phea
 ```
 
 ## Where to find the full tutorial 
-Please refer to the full tutorial [https://github.com/kehongjie/CAR-NET/blob/main/tutorial/CAR-NET_tutorial.pdf](here) for details.
+Please refer to the full tutorial [here](https://github.com/kehongjie/CAR-NET/blob/main/tutorial/CAR-NET_tutorial.pdf) for details.
 
 
 
