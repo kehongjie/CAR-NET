@@ -14,6 +14,60 @@ preproc_server <- function(input, output, session) {
   gene_name <- reactiveVal()  # naming format of original gene data
   lnc_mat <- reactiveVal()
   rna_mat <- reactiveVal()
+  tcga_ncRNA_path <- file.path("data", "TCGA_KIRP_early_lncRNA_top5per.csv")
+  tcga_gene_path <- file.path("data", "TCGA_KIRP_early_gene_top5per.csv")
+  tcga_clinical_path <- file.path("data", "TCGA_KIRP_early_clinical.csv")
+  file_info_from_path <- function(path) {
+    if (!file.exists(path)) {
+      return(NULL)
+    }
+    path <- normalizePath(path, mustWork = TRUE)
+    info <- file.info(path)
+    data.frame(
+      name = basename(path),
+      size = info$size,
+      type = "text/csv",
+      datapath = path,
+      stringsAsFactors = FALSE
+    )
+  }
+  file_datapath <- function(file_info) {
+    file_info$datapath[1]
+  }
+  value_or_default <- function(value, default) {
+    if (is.null(value)) default else value
+  }
+  selected_data_source <- function() {
+    value_or_default(input$data_source, "tcga_kirp")
+  }
+  resolve_file_info <- function(uploaded_file, example_path) {
+    if (selected_data_source() == "tcga_kirp") {
+      file_info_from_path(example_path)
+    } else if (!is.null(uploaded_file) && !is.null(uploaded_file$datapath)) {
+      uploaded_file
+    } else {
+      NULL
+    }
+  }
+  initial_ncRNA_file <- file_info_from_path(tcga_ncRNA_path)
+  initial_gene_file <- file_info_from_path(tcga_gene_path)
+  initial_clinical_file <- file_info_from_path(tcga_clinical_path)
+  initial_clinical_data <- if (!is.null(initial_clinical_file)) {
+    read.csv(file_datapath(initial_clinical_file), check.names = FALSE)
+  } else {
+    data.frame(
+      Status = "No bundled TCGA_KIRP clinical CSV is available; clinical data are optional for this example.",
+      stringsAsFactors = FALSE
+    )
+  }
+  vals <- reactiveValues(
+    file1 = initial_ncRNA_file,
+    file2 = initial_gene_file,
+    filtered_ncRNA_data = NULL,
+    filtered_gene_data = NULL,
+    clinical_file = initial_clinical_file,
+    clinical_data = initial_clinical_data
+  )
   
   ##########################
   # Observers              #
@@ -50,72 +104,56 @@ preproc_server <- function(input, output, session) {
     filtered_genes <- raw_counts[nonzero_counts >= min_cells, ]
     return(filtered_genes)
   }
-  
-  
-  ######################################
-  # FILTER SELECTION-----
-  
-# watch for filter selection for ncRNA-------
-  
-  observe({
-    print(input$mean)
-    print(input$variance)
-  })
-  
-  
-  ## lncRNA submit button -----
-  observeEvent(input$submit_btn, {
-    filePath <- input$ncRNA_file
-    fileText <- read.csv(filePath$datapath, check.names = F, row.names = 1)
+
+  process_ncRNA_file <- function(file_info, mean_threshold, variance_threshold,
+                                 zero_threshold, log2_value, rna_type_value,
+                                 ncRNA_name_value, platform_value) {
+    if (is.null(file_info)) {
+      return(NULL)
+    }
+    fileText <- read.csv(file_datapath(file_info), check.names = FALSE, row.names = 1)
     df <- fileText
-    mean_threshold <- as.numeric(input$mean)
-    variance_threshold <- as.numeric(input$variance)
-    zero_threshold <- input$zero
-    log2 <- input$log2_transformation
-    val2 <- input$RNA_type
-    val <- input$ncRNA_name
-    plat <- input$platform
     
-    if(plat == 2 ){
-      df_f <- internal_filter_zero(df,input$zero)
+    if(platform_value == 2 ){
+      df_f <- internal_filter_zero(df, zero_threshold)
       #df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
       df_f <- internal_filter(df, mean_threshold)[[1]]
-      df_f <- internal_filter_var(df,variance_threshold) 
-    }else if(plat == 1){
+      df_f <- internal_filter_var(df, variance_threshold) 
+    }else if(platform_value == 1){
       #df_f <- as.data.frame(internal_filter(df, mean_threshold)[1], check.names = FALSE)
       df_f <- internal_filter(df, mean_threshold)[[1]]
-      df_f <- internal_filter_var(df,variance_threshold) 
+      df_f <- internal_filter_var(df, variance_threshold) 
     }
     
-    if(log2 == 2){
-      df_f <- log2(df_f+1)
+    if(log2_value == 2){
+      df_f <- base::log2(df_f+1)
     }
     
     df <- t(df_f)
     genes <- rownames(df_f)
-    if(val2 == 2){ # lncRNA
+    if(rna_type_value == 2){ # lncRNA
       ENSG_ids <- c()
-      if(val == 0){ # LNCipedia
+      if(ncRNA_name_value == 0){ # LNCipedia
         ENSG_ids <- colnames(df)
-      }else if (val == 1) { # ENSG
+      }else if (ncRNA_name_value == 1) { # ENSG
         ref <- read.csv("./data/reference/ENSG_lnci.csv")
         for (gene in genes) {
-            if (gene %in% ref$ENSG) {
-                ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
-            } else {
-                ENSG_ids <- c(ENSG_ids, gene)
-            }
-         }
-      }else if (val == 2){
-            ref <- read.csv("./data/reference/HSAL_lnci.csv")
-            for (gene in genes) {
-                if (gene %in% ref$HSAL) {
-                    ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
-                } else {
-                    ENSG_ids <- c(ENSG_ids, gene)
+          if (gene %in% ref$ENSG) {
+            ENSG_ids <- c(ENSG_ids, ref$name[which(ref$ENSG == gene)[1]])
+          } else {
+            ENSG_ids <- c(ENSG_ids, gene)
           }
         }
-      }else if (val == 3){
+      }else if (ncRNA_name_value == 2){
+        ref <- read.csv("./data/reference/HSAL_lnci.csv")
+        for (gene in genes) {
+          if (gene %in% ref$HSAL) {
+            ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HSAL == gene)[1]])
+          } else {
+            ENSG_ids <- c(ENSG_ids, gene)
+          }
+        }
+      }else if (ncRNA_name_value == 3){
         ref <- read.csv("./data/reference/HGNC_lnci.csv")
         if (gene %in% ref$HGNC) {
           ENSG_ids <- c(ENSG_ids, ref$name[which(ref$HGNC == gene)[1]])
@@ -126,29 +164,21 @@ preproc_server <- function(input, output, session) {
       colnames(df) <- ENSG_ids
       names_rna(ENSG_ids)
     }
-    vals$filtered_ncRNA_data <- t(df)
-    output$ncRNA_file <- DT::renderDataTable({
-      vals$filtered_ncRNA_data
-    })
-  }, label="Filter lncRNA data.")
-  
-  
-# watch for filter for gene expression------------
-  
-  observeEvent(input$submit_btn_gene, {
-    #browser() 
-    filePath <- input$gene_file
-    fileText <- read.csv(filePath$datapath, check.names = FALSE,row.names = 1)
+    t(df)
+  }
+
+  process_gene_file <- function(file_info, mean_threshold_gene,
+                                variance_threshold_gene, zero_threshold_gene,
+                                name_gene_value, platform_value,
+                                log2_value) {
+    if (is.null(file_info)) {
+      return(NULL)
+    }
+    fileText <- read.csv(file_datapath(file_info), check.names = FALSE, row.names = 1)
     df <- fileText
-    mean_threshold_gene <- as.numeric(input$gene_mean)
-    variance_threshold_gene <- as.numeric(input$gene_variance)
-    zero_threshold_gene <- input$gene_zero
-    val <- input$name_gene
-    plat_g <- input$gene_platform
-    log2_g <- input$gene_log2_transformation
     ref <- read.csv("./data/reference/ENSG_HGNC.csv")
     genes <- rownames(df)
-    if(val == 1 ){
+    if(name_gene_value == 1 ){
       ENSG_ids <- c()
       for (gene in genes) {
         if (gene %in% ref$Ensembl_gene_ID) {
@@ -160,22 +190,143 @@ preproc_server <- function(input, output, session) {
       rownames(df) <- ENSG_ids
     }
     
-    if(plat_g == 2 ){
-      df_f <- internal_filter_zero(df,zero_threshold_gene)
+    if(platform_value == 2 ){
+      df_f <- internal_filter_zero(df, zero_threshold_gene)
       df_f <- internal_filter(df, mean_threshold_gene)[[1]]
-      df_f <- internal_filter_var(df,variance_threshold_gene) 
-    }else if(plat_g == 1){
+      df_f <- internal_filter_var(df, variance_threshold_gene) 
+    }else if(platform_value == 1){
       df_f <- internal_filter(df, mean_threshold_gene)[[1]]
-      df_f <- internal_filter_var(df,variance_threshold_gene) 
+      df_f <- internal_filter_var(df, variance_threshold_gene) 
     }
-    if(log2_g == 2){
-      df_f <- log2(df_f+1)
+    if(log2_value == 2){
+      df_f <- base::log2(df_f+1)
     }
-    vals$filtered_gene_data <- df_f
-    output$gene_file <- DT::renderDataTable({
-      vals$filtered_gene_data
-    })
+    df_f
+  }
+
+  refresh_ncRNA_data <- function() {
+    vals$file1 <- resolve_file_info(input$ncRNA_file, tcga_ncRNA_path)
+    vals$filtered_ncRNA_data <- process_ncRNA_file(
+      vals$file1,
+      as.numeric(value_or_default(input$mean, 1)),
+      as.numeric(value_or_default(input$variance, 0.1)),
+      value_or_default(input$zero, 0.1),
+      value_or_default(input$log2_transformation, 1),
+      value_or_default(input$RNA_type, 2),
+      value_or_default(input$ncRNA_name, 1),
+      value_or_default(input$platform, 1)
+    )
+  }
+
+  refresh_gene_data <- function() {
+    vals$file2 <- resolve_file_info(input$gene_file, tcga_gene_path)
+    vals$filtered_gene_data <- process_gene_file(
+      vals$file2,
+      as.numeric(value_or_default(input$gene_mean, 1)),
+      as.numeric(value_or_default(input$gene_variance, 0.1)),
+      value_or_default(input$gene_zero, 0.1),
+      value_or_default(input$name_gene, 0),
+      value_or_default(input$gene_platform, 1),
+      value_or_default(input$gene_log2_transformation, 1)
+    )
+  }
+
+  refresh_clinical_data <- function() {
+    if (selected_data_source() == "tcga_kirp") {
+      vals$clinical_file <- file_info_from_path(tcga_clinical_path)
+    } else if (!is.null(input$clinical_file) && !is.null(input$clinical_file$datapath)) {
+      vals$clinical_file <- input$clinical_file
+    } else {
+      vals$clinical_file <- NULL
+    }
+    
+    if (!is.null(vals$clinical_file)) {
+      vals$clinical_data <- read.csv(file_datapath(vals$clinical_file), check.names = FALSE)
+    } else if (selected_data_source() == "tcga_kirp") {
+      vals$clinical_data <- data.frame(
+        Status = "No bundled TCGA_KIRP clinical CSV is available; clinical data are optional for this example.",
+        stringsAsFactors = FALSE
+      )
+    } else {
+      vals$clinical_data <- data.frame(
+        Status = "No clinical file uploaded. Clinical data are optional.",
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+
+  load_tcga_example_data <- function() {
+    ncRNA_file <- file_info_from_path(tcga_ncRNA_path)
+    gene_file <- file_info_from_path(tcga_gene_path)
+    
+    vals$file1 <- ncRNA_file
+    vals$file2 <- gene_file
+    vals$filtered_ncRNA_data <- process_ncRNA_file(
+      ncRNA_file,
+      mean_threshold = 1,
+      variance_threshold = 0.1,
+      zero_threshold = 0.1,
+      log2_value = 1,
+      rna_type_value = 2,
+      ncRNA_name_value = 1,
+      platform_value = 1
+    )
+    vals$filtered_gene_data <- process_gene_file(
+      gene_file,
+      mean_threshold_gene = 1,
+      variance_threshold_gene = 0.1,
+      zero_threshold_gene = 0.1,
+      name_gene_value = 0,
+      platform_value = 1,
+      log2_value = 1
+    )
+  }
+
+  load_tcga_example_data()
+  
+  
+  ######################################
+  # FILTER SELECTION-----
+  
+# watch for filter selection for ncRNA-------
+  
+  ## lncRNA submit button -----
+  observeEvent(input$data_source, {
+    if (selected_data_source() == "tcga_kirp") {
+      updateRadioButtons(session, "RNA_type", selected = 2)
+      updateRadioButtons(session, "ncRNA_name", selected = 1)
+      updateRadioButtons(session, "platform", selected = 1)
+      updateRadioButtons(session, "log2_transformation", selected = 1)
+      updateRadioButtons(session, "name_gene", selected = 0)
+      updateRadioButtons(session, "gene_platform", selected = 1)
+      updateRadioButtons(session, "gene_log2_transformation", selected = 1)
+      load_tcga_example_data()
+    } else {
+      refresh_ncRNA_data()
+      refresh_gene_data()
+    }
+    refresh_clinical_data()
+  }, ignoreNULL = FALSE, label = "Select data source.")
+  
+  observeEvent(input$submit_btn, {
+    refresh_ncRNA_data()
+  }, label="Filter lncRNA data.")
+  observeEvent(input$ncRNA_file, {
+    refresh_ncRNA_data()
+  }, ignoreNULL = FALSE, label="Load ncRNA data.")
+  
+  
+# watch for filter for gene expression------------
+  
+  observeEvent(input$submit_btn_gene, {
+    refresh_gene_data()
   },label="Filter gene expression data")
+  observeEvent(input$gene_file, {
+    refresh_gene_data()
+  }, ignoreNULL = FALSE, label="Load gene expression data")
+  observeEvent(input$clinical_file, {
+    refresh_clinical_data()
+  }, ignoreNULL = FALSE, label="Load clinical data")
   
  
 
@@ -279,23 +430,33 @@ preproc_server <- function(input, output, session) {
   #   }
   # }, label="gene file upload")
 
-  # watch for clinical file upload
-  observeEvent(input$clinical_file, {
-    if (!is.null(input$clinical_file)) {
-      output$clinical_file <- DT::renderDataTable({
-        filePath <- input$clinical_file
-        fileText <- read.csv(filePath$datapath)
-        fileText
-      })
-    } else {
-      return(NULL)
-    }
-  }, label="clinical file upload")
+  output$ncRNA_file <- DT::renderDataTable({
+    validate(need(
+      !is.null(vals$filtered_ncRNA_data),
+      if (selected_data_source() == "tcga_kirp") {
+        "TCGA_KIRP ncRNA example file is missing."
+      } else {
+        "Upload an ncRNA expression CSV to preview and preprocess custom data."
+      }
+    ))
+    vals$filtered_ncRNA_data
+  })
+  output$gene_file <- DT::renderDataTable({
+    validate(need(
+      !is.null(vals$filtered_gene_data),
+      if (selected_data_source() == "tcga_kirp") {
+        "TCGA_KIRP gene example file is missing."
+      } else {
+        "Upload a gene expression CSV to preview and preprocess custom data."
+      }
+    ))
+    vals$filtered_gene_data
+  })
+  output$clinical_file <- DT::renderDataTable({
+    vals$clinical_data
+  })
   
   # Values to be read by saved_data_server.R
-  vals <- reactiveValues()
-  observe({vals$file1 <- input$ncRNA_file})
-  observe({vals$file2 <- input$gene_file})
   observe({vals$cutoff_ncRNA <- input$cutoff_ncRNA})
   observe({vals$cutoff_gene <- input$cutoff_gene})
   observe({vals$names_rna <- names_rna()})

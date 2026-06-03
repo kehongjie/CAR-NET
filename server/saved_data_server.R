@@ -36,6 +36,10 @@ saved_data_server <- function(input, output, session, ImProxy) {
     wait(session, "Generating Bayesian Network, may take a while")
     path_old <- getwd()
     try({
+      if (is.null(ImProxy$file1) || is.null(ImProxy$file2) ||
+          is.null(ImProxy$filtered_ncRNA_data) || is.null(ImProxy$filtered_gene_data)) {
+        stop("Select TCGA_KIRP example or upload both ncRNA and gene expression CSVs before running CAR-NET.")
+      }
       filePath <- ImProxy$file1
       fileText <- read.csv(filePath$datapath, check.names = FALSE)
       df <- t(fileText)
@@ -55,7 +59,6 @@ saved_data_server <- function(input, output, session, ImProxy) {
       df <- data.frame(apply(df, MARGIN = c(1,2), FUN = function(x) as.numeric(as.character(x))))
       Y <- t(ImProxy$filtered_gene_data)
       #Y <- df 
-      browser()
       shared_var$X <- X
       shared_var$Y <- Y
       
@@ -124,62 +127,84 @@ saved_data_server <- function(input, output, session, ImProxy) {
     done(session)
   })
   
-  ########## pathway analysis for all genes in the network ##########
-  observeEvent(input$pathway_all, {
-    p2 <- shared_var$p2
-    q2 <- shared_var$q2
-    
-    gene_list <- colnames(adj_mat())[(p2+1):(p2+q2)]
-    bg <- colnames(shared_var$Y)
-    print(paste(length(gene_list), "genes in the network"))
-    print(paste(length(bg), "genes in the background"))
-    
-    output$path_plot_all <- renderPlot({
-      run.path(gene.list=gene_list, background=bg)
-    })
-    
-    observe({
-      updateTabsetPanel(session, "tabSelect",
-                        selected = "panel1")
-    })
-    
-  }) 
-  
-  
   ########## modulization ##########
   observeEvent(input$butt_mod, {
-    
     mat_post_sub <- post_prob()
+    dag_sub <- adj_mat()
     p2 <- shared_var$p2
     q2 <- shared_var$q2
-    print(paste("p2=", p2, sep=""))
-    print(paste("q2=", q2, sep=""))
+    min_module_size <- as.numeric(input$mod_size)
+    if (!is.finite(min_module_size) || min_module_size < 1) {
+      min_module_size <- 1
+    }
+    min_module_size <- ceiling(min_module_size)
+    
+    if (is.null(mat_post_sub) || is.null(dag_sub) ||
+        is.null(p2) || is.null(q2) || nrow(dag_sub) == 0) {
+      output$heatmap <- renderPlot({
+        plot.new()
+        text(0.5, 0.5, "Run CAR-NET before detecting modules.")
+      })
+      output$table_node <- renderTable(
+        data.frame(Message = "Run CAR-NET before detecting modules."),
+        striped = TRUE
+      )
+      output$network_visual <- renderPlot({
+        plot.new()
+        text(0.5, 0.5, "Run CAR-NET before detecting modules.")
+      })
+      updateSelectInput(session, "sel_mod", choices = c("No modules available" = ""), selected = "")
+      updateTabsetPanel(session, "tabSelect", selected = "panel2")
+      return(NULL)
+    }
+    
+    nc_positions <- if (p2 > 0) seq_len(p2) else integer(0)
+    gene_positions <- if (q2 > 0) (p2 + 1):(p2 + q2) else integer(0)
     
     # result <- partition(adj_mat(), post_prob()[pos_innet, pos_innet], p())
     ## network partition
-    g1 <- graph_from_adjacency_matrix(adj_mat(), mode="undirected")
+    g1 <- graph_from_adjacency_matrix(dag_sub, mode="max")
     set.seed(1234)
     fit_lou <- cluster_louvain(g1, resolution=1)
-    grp_idx <- as.numeric(names(sort(table(fit_lou$membership), 
-                                     decreasing = T))) ## group name in descending order
-    grp_idx <- grp_idx[as.numeric(sort(table(fit_lou$membership), 
-                                       decreasing = T))>=5] ## only keep modules with size larger than 10
+    module_sizes <- sort(table(fit_lou$membership), decreasing = TRUE)
+    grp_idx <- as.numeric(names(module_sizes)[as.numeric(module_sizes) >= min_module_size])
+    has_ncRNA_and_gene <- vapply(grp_idx, function(idx) {
+      pos_node <- which(fit_lou$membership == idx)
+      length(intersect(pos_node, nc_positions)) > 0 &&
+        length(intersect(pos_node, gene_positions)) > 0
+    }, logical(1))
+    grp_idx <- grp_idx[has_ncRNA_and_gene]
     shared_var$fit_lou <- fit_lou
     shared_var$grp_idx <- grp_idx
-    print(paste("length of membership is", length(fit_lou$membership)))
-    print(fit_lou$membership)
-    print(grp_idx)
+    
+    if (length(grp_idx) == 0) {
+      msg <- paste0(
+        "No modules with at least ", min_module_size,
+        " nodes and both ncRNA/gene nodes were found. Try a smaller minimum module size."
+      )
+      output$heatmap <- renderPlot({
+        plot.new()
+        text(0.5, 0.5, msg)
+      })
+      output$table_node <- renderTable(data.frame(Message = msg), striped = TRUE)
+      output$network_visual <- renderPlot({
+        plot.new()
+        text(0.5, 0.5, msg)
+      })
+      updateSelectInput(session, "sel_mod", choices = c("No modules available" = ""), selected = "")
+      updateTabsetPanel(session, "tabSelect", selected = "panel2")
+      return(NULL)
+    }
     
     ## only visualize a subset of modules 
-    m <- tmp <- 0
-    mod_size <- as.numeric(sort(table(fit_lou$membership), decreasing = T))
-    while (tmp<100 & m<length(mod_size)) {
-      m <- m+1
-      tmp <- sum(mod_size[1:m])
-    } ## take up to 100 nodes
-    if(tmp>100) {m <- m-1}
-    print(paste("m=",m,sep="")) 
-    print(mod_size)
+    kept_module_sizes <- as.numeric(module_sizes[match(grp_idx, names(module_sizes))])
+    cumulative_size <- cumsum(kept_module_sizes)
+    m <- max(which(cumulative_size <= 100), na.rm = TRUE)
+    if (!is.finite(m) || m < 1) {
+      m <- 1
+    }
+    m <- min(m, length(grp_idx))
+    display_grp_idx <- grp_idx[seq_len(m)]
     
     ## reorder nodes within modules (later)
     # ncord <- geord <- ncsep <- gesep <- NULL
@@ -201,16 +226,16 @@ saved_data_server <- function(input, output, session, ImProxy) {
     ## not reordering 
     ncord <- geord <- ncsep <- gesep <- NULL
     mat_node <- NULL
-    for (i in 1:m) {
-      pos_nc <- intersect(which(fit_lou$membership==grp_idx[i]), 1:p2)
-      pos_ge <- intersect(which(fit_lou$membership==grp_idx[i]), (p2+1):(p2+q2))
+    for (i in seq_along(display_grp_idx)) {
+      pos_nc <- intersect(which(fit_lou$membership == display_grp_idx[i]), nc_positions)
+      pos_ge <- intersect(which(fit_lou$membership == display_grp_idx[i]), gene_positions)
       
       ncord <- c(ncord, rownames(mat_post_sub)[pos_nc])
       geord <- c(geord, colnames(mat_post_sub)[pos_ge])
       ncsep <- c(ncsep, length(ncord))
       gesep <- c(gesep, length(geord))
       
-      ## for node names table
+	      ## for node names table
       tmp1 <- rownames(mat_post_sub)[pos_nc]
       tmp2 <- colnames(mat_post_sub)[pos_ge]
       new_mat <- cbind(rep(paste("Module",i), length(tmp1)+length(tmp2)), 
@@ -222,23 +247,21 @@ saved_data_server <- function(input, output, session, ImProxy) {
     }
     colnames(mat_node) <- c("Module", "Node name", "Node type")
 
-    
-    post_mod <- mat_post_sub[match(ncord, colnames(mat_post_sub)), 
+    post_mod <- mat_post_sub[match(ncord, rownames(mat_post_sub)), 
                              match(geord, colnames(mat_post_sub))]
     
     output$heatmap <- renderPlot({
+      validate(need(nrow(post_mod) > 0 && ncol(post_mod) > 0,
+                    "No module heatmap is available for the selected minimum module size."))
       pheatmap(post_mod, cluster_rows = F, cluster_cols = F, fontsize_row=8, fontsize_col=8,
                color = colorRampPalette(c("#f4f5f4", "#b2182b"))(50), border_color="black",
-               gaps_row=ncsep, gaps_col=gesep, angle_col=315) # fontsize 3-6
+               gaps_row=head(ncsep, -1), gaps_col=head(gesep, -1), angle_col=315) # fontsize 3-6
       
     })
     
     output$table_node <- renderTable(mat_node, striped=TRUE)
     
-    observe({
-      updateTabsetPanel(session, "tabSelect",
-                        selected = "panel2")
-    })
+    updateTabsetPanel(session, "tabSelect", selected = "panel2")
     
     
   })
@@ -260,13 +283,25 @@ saved_data_server <- function(input, output, session, ImProxy) {
     p2 <- shared_var$p2
     q2 <- shared_var$q2
     
-    l <- as.list(seq(1,length(grp_idx)))
-    observe({
+    if (is.null(fit_lou) || is.null(grp_idx) || length(grp_idx) == 0) {
       updateSelectInput(session, "sel_mod",
                         label = "Select a module to display",
-                        choices = l,
-                        selected = l[1])
+                        choices = c("No modules available" = ""),
+                        selected = "")
+      output$network_visual <- renderPlot({
+        plot.new()
+        text(0.5, 0.5, "No modules are available to visualize.")
       })
+      updateTabsetPanel(session, "tabSelect", selected = "panel2")
+      done(session)
+      return(NULL)
+    }
+    
+    module_choices <- seq_along(grp_idx)
+    updateSelectInput(session, "sel_mod",
+                      label = "Select a module to display",
+                      choices = module_choices,
+                      selected = module_choices[1])
     
     output$network_visual <- renderPlot({
       # # A temp file to save the output.
@@ -275,11 +310,17 @@ saved_data_server <- function(input, output, session, ImProxy) {
       # # Generate the PNG
       # png(outfile, width = 800, height = 600)
       
-      idx <- grp_idx[as.numeric(input$sel_mod)]
+      selected_module <- as.numeric(input$sel_mod)
+      validate(need(is.finite(selected_module) && selected_module >= 1 &&
+                      selected_module <= length(grp_idx),
+                    "Select a module to display."))
+      idx <- grp_idx[selected_module]
       pos_node <- which(fit_lou$membership==idx) ## position of nodes in this module
-      adj_single <- dag_sub[pos_node, pos_node]
-      prob_single <- mat_post_sub[pos_node, pos_node]
-      a1 <- length(intersect(pos_node, 1:p2)) ## number of ncRNAs in this module
+      validate(need(length(pos_node) > 0, "The selected module has no nodes to display."))
+      adj_single <- dag_sub[pos_node, pos_node, drop = FALSE]
+      prob_single <- mat_post_sub[pos_node, pos_node, drop = FALSE]
+      nc_positions <- if (p2 > 0) seq_len(p2) else integer(0)
+      a1 <- length(intersect(pos_node, nc_positions)) ## number of ncRNAs in this module
       
       ## NOTE: modify the visualization function accordingly
       single_igraph(adj_single=adj_single, prob_single=prob_single, ncRNA_num=a1,
@@ -295,10 +336,7 @@ saved_data_server <- function(input, output, session, ImProxy) {
     })#, deleteFile = TRUE)
     
     
-    observe({
-      updateTabsetPanel(session, "tabSelect",
-                        selected = "panel3")
-    })
+    updateTabsetPanel(session, "tabSelect", selected = "panel3")
     done(session)
   })
   

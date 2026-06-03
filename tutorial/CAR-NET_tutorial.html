@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAR-NET R Shiny Tutorial</title>
+  <style>
+    :root {
+      --ink: #1f2d29;
+      --muted: #5d6d68;
+      --line: #d8e2de;
+      --soft: #f5f8f7;
+      --panel: #ffffff;
+      --green: #266857;
+      --green-dark: #18483c;
+      --blue: #315b8f;
+      --amber: #9a6b16;
+      --code-bg: #18211f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #f7faf9;
+      color: var(--ink);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    a {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:focus {
+      color: var(--green-dark);
+      text-decoration: underline;
+    }
+
+    .page-header {
+      background: linear-gradient(180deg, #ffffff 0%, #edf5f2 100%);
+      border-bottom: 1px solid var(--line);
+      padding: 42px 24px 32px;
+    }
+
+    .header-inner {
+      margin: 0 auto;
+      max-width: 1180px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      color: var(--ink);
+      font-size: 40px;
+      font-weight: 600;
+      line-height: 1.15;
+      margin: 0 0 14px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.55;
+      margin: 0;
+      max-width: 900px;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .button {
+      align-items: center;
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      color: var(--green-dark);
+      display: inline-flex;
+      font-weight: 600;
+      min-height: 42px;
+      padding: 9px 14px;
+      text-decoration: none;
+    }
+
+    .button.primary {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .button:hover,
+    .button:focus {
+      background: #e8f2ef;
+      text-decoration: none;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus {
+      background: var(--green-dark);
+      color: #ffffff;
+    }
+
+    .layout {
+      display: grid;
+      gap: 28px;
+      grid-template-columns: 260px minmax(0, 1fr);
+      margin: 0 auto;
+      max-width: 1180px;
+      padding: 28px 24px 54px;
+    }
+
+    .toc {
+      align-self: start;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .toc h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+
+    .toc a {
+      border-radius: 5px;
+      color: #314640;
+      display: block;
+      font-size: 14px;
+      line-height: 1.35;
+      padding: 6px 8px;
+    }
+
+    .toc a:hover,
+    .toc a:focus {
+      background: #eef5f3;
+      color: var(--green-dark);
+      text-decoration: none;
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 18px;
+      padding: 26px;
+    }
+
+    h2 {
+      color: var(--ink);
+      font-size: 25px;
+      font-weight: 600;
+      line-height: 1.25;
+      margin: 0 0 14px;
+    }
+
+    h3 {
+      color: var(--ink);
+      font-size: 19px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin: 24px 0 10px;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 16px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      background: #edf2f0;
+      border-radius: 4px;
+      color: #173d35;
+      font-family: Menlo, Consolas, Monaco, monospace;
+      font-size: 0.92em;
+      padding: 2px 5px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border-radius: 8px;
+      color: #f3f8f6;
+      line-height: 1.5;
+      margin: 14px 0 18px;
+      overflow-x: auto;
+      padding: 16px;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 20px;
+    }
+
+    .summary-card {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .summary-card strong {
+      color: var(--green-dark);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--green);
+      background: #eef7f3;
+      border-radius: 6px;
+      margin: 16px 0;
+      padding: 14px 16px;
+    }
+
+    .callout.warning {
+      background: #fff8e8;
+      border-left-color: var(--amber);
+    }
+
+    .workflow {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .workflow-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .workflow-card h3 {
+      color: var(--blue);
+      margin-top: 0;
+    }
+
+    .flowchart {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: block;
+      height: auto;
+      margin: 18px auto 0;
+      max-width: 100%;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 20px auto 0;
+      max-width: 1180px;
+      padding: 0 24px 36px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+      }
+
+      .summary-grid,
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-header {
+        padding: 30px 16px 24px;
+      }
+
+      .layout {
+        padding: 18px 14px 38px;
+      }
+
+      section {
+        padding: 20px 16px;
+      }
+
+      h1 {
+        font-size: 31px;
+      }
+
+      .lead {
+        font-size: 17px;
+      }
+
+      .button {
+        justify-content: center;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-inner">
+      <p class="eyebrow">CAR-NET Documentation</p>
+      <h1>CAR-NET R Shiny Tutorial</h1>
+      <p class="lead">
+        A practical guide for preparing expression data, running CAR-NET, and interpreting noncoding RNA-gene regulatory networks in the Shiny app.
+      </p>
+      <div class="header-actions">
+        <a class="button primary" href="../">Back to CAR-NET app</a>
+        <a class="button" href="CAR-NET_tutorial.md">Markdown version</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Tutorial sections">
+      <h2>Sections</h2>
+      <a href="#overview">Overview</a>
+      <a href="#requirements">Requirements</a>
+      <a href="#download-launch">Download And Launch</a>
+      <a href="#input-data">Input Data Format</a>
+      <a href="#preprocessing">Data Uploading And Preprocessing</a>
+      <a href="#analysis">Running CAR-NET</a>
+      <a href="#differential">Differential Regulation</a>
+      <a href="#modules">Module Detection</a>
+      <a href="#pathway">Pathway Analysis</a>
+      <a href="#examples">Example Workflows</a>
+      <a href="#interpretation">Interpreting Results</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+    </nav>
+
+    <main>
+      <section id="overview">
+        <h2>1. Overview</h2>
+        <p>
+          CAR-NET, Construction and Analysis of noncoding RNA gene regulatory NETwork, is an R Shiny application for inferring noncoding RNA-gene regulatory networks from transcriptomic data and curated ncRNA-gene-disease interaction databases.
+        </p>
+        <p>
+          CAR-NET supports ncRNA and coding gene expression data from bulk RNA-seq, microarray, and scRNA-seq studies. The app guides users through preprocessing, network construction, differential network analysis, module and subnetwork detection, pathway analysis, visualization, and downloadable graphical and tabular outputs.
+        </p>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <strong>Input</strong>
+            Matched ncRNA and coding gene expression matrices, plus optional clinical data.
+          </div>
+          <div class="summary-card">
+            <strong>Model</strong>
+            Two-stage hybrid Bayesian network structure learning for semi-bipartite regulation.
+          </div>
+          <div class="summary-card">
+            <strong>Output</strong>
+            Regulatory networks, differential edges, modules, pathway results, plots, and tables.
+          </div>
+        </div>
+        <img class="flowchart" src="../flowchart.png" alt="CAR-NET workflow diagram">
+      </section>
+
+      <section id="requirements">
+        <h2>2. Requirements</h2>
+        <p>
+          CAR-NET should be run in a clean software environment. The app uses R for Shiny, preprocessing, network inference, and pathway analysis, and it uses Python through <code>reticulate</code> for selected image/data handling.
+        </p>
+        <p>Recommended base versions:</p>
+        <ul>
+          <li>R &gt;= 4.0.0</li>
+          <li>Rcpp &gt;= 1.0.0</li>
+          <li>Shiny &gt;= 1.0.0</li>
+          <li>Python 3.11 with <code>pandas</code> and <code>pillow</code>/<code>PIL</code></li>
+        </ul>
+        <p>The current CAR-NET source imports or references these packages:</p>
+        <ul>
+          <li><strong>Core app and network packages:</strong> <code>shiny</code>, <code>shinyBS</code>, <code>shinyjs</code>, <code>DT</code>, <code>Rcpp</code>, <code>RcppArmadillo</code>, <code>RcppGSL</code>, <code>ggrepel</code>, <code>igraph</code>, <code>devtools</code>, <code>dplyr</code>, <code>cluster</code>, <code>reticulate</code>, <code>MASS</code>, <code>BiDAG</code>, <code>CCA</code>, <code>CCP</code>, <code>pheatmap</code>, <code>EnvStats</code>, <code>stringr</code>, <code>ggplot2</code>, <code>graph</code>, <code>Rgraphviz</code>, <code>RBGL</code>, and <code>pcalg</code>.</li>
+          <li><strong>Pathway and annotation packages:</strong> <code>gplots</code>, <code>KEGGREST</code>, <code>KEGGgraph</code>, <code>org.Hs.eg.db</code>, <code>org.Mm.eg.db</code>, <code>org.Rn.eg.db</code>, <code>org.Ce.eg.db</code>, <code>org.Dm.eg.db</code>, <code>reactome.db</code>, and <code>biomaRt</code>.</li>
+        </ul>
+
+        <h3>Create a new conda environment</h3>
+        <p>The most reproducible setup is to create a dedicated conda environment first:</p>
+        <pre><code class="language-bash">conda create -y -n car-net \
+  -c conda-forge -c bioconda \
+  r-base=4.3 python=3.11 pandas pillow \
+  c-compiler cxx-compiler fortran-compiler make \
+  r-shiny r-shinybs r-shinyjs r-dt \
+  r-rcpp r-rcpparmadillo r-rcppgsl \
+  r-ggrepel r-igraph r-devtools r-dplyr r-cluster r-reticulate \
+  r-mass r-cca r-ccp r-pheatmap r-envstats r-stringr r-ggplot2 \
+  r-gplots r-biocmanager r-remotes r-rstudioapi \
+  bioconductor-graph bioconductor-rgraphviz bioconductor-rbgl r-pcalg
+
+conda activate car-net</code></pre>
+
+        <p>Pin <code>reticulate</code> to the conda Python and clear inherited external R library paths:</p>
+        <pre><code class="language-bash">conda env config vars set RETICULATE_PYTHON="$CONDA_PREFIX/bin/python" \
+  R_LIBS= R_LIBS_USER= R_LIBS_SITE=
+
+conda deactivate
+conda activate car-net</code></pre>
+
+        <h3>Install remaining R packages</h3>
+        <p>Install <code>BiDAG</code> from CRAN after the conda graph dependencies and compilers are available:</p>
+        <pre><code class="language-r">install.packages("BiDAG", repos = "https://cloud.r-project.org")</code></pre>
+
+        <p>If you plan to run pathway topology and organism annotation workflows, install the optional Bioconductor pathway packages:</p>
+        <pre><code class="language-r">if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager", repos = "https://cloud.r-project.org")
+}
+
+BiocManager::install(c(
+  "KEGGREST", "KEGGgraph",
+  "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db",
+  "org.Ce.eg.db", "org.Dm.eg.db",
+  "reactome.db", "biomaRt"
+), ask = FALSE, update = FALSE)</code></pre>
+
+        <h3>Verify the environment</h3>
+        <p>From the activated environment, run:</p>
+        <pre><code class="language-r">required_r &lt;- c(
+  "shiny", "shinyBS", "shinyjs", "DT", "Rcpp", "RcppArmadillo",
+  "RcppGSL", "ggrepel", "igraph", "devtools", "dplyr", "cluster",
+  "reticulate", "MASS", "BiDAG", "CCA", "CCP", "pheatmap",
+  "EnvStats", "stringr", "ggplot2", "graph", "Rgraphviz", "RBGL",
+  "pcalg", "gplots"
+)
+
+missing &lt;- required_r[!vapply(required_r, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing)) {
+  stop("Missing R packages: ", paste(missing, collapse = ", "))
+}
+
+library(reticulate)
+stopifnot(py_module_available("PIL"))
+stopifnot(py_module_available("pandas"))
+
+cat("CAR-NET environment check passed\n")</code></pre>
+      </section>
+
+      <section id="download-launch">
+        <h2>3. Download And Launch</h2>
+        <h3>Option 1: Download ZIP</h3>
+        <ol>
+          <li>Go to <a href="https://github.com/kehongjie/CAR-NET" target="_blank" rel="noopener">https://github.com/kehongjie/CAR-NET</a>.</li>
+          <li>Click <strong>Code</strong> and then <strong>Download ZIP</strong>.</li>
+          <li>Unzip the archive and open the extracted CAR-NET folder.</li>
+        </ol>
+        <h3>Option 2: Clone with git</h3>
+        <pre><code class="language-bash">git clone https://github.com/kehongjie/CAR-NET.git
+cd CAR-NET</code></pre>
+        <p>From the repository root, launch the app with:</p>
+        <pre><code class="language-r">shiny::runApp(".", port = 9987, launch.browser = TRUE)</code></pre>
+        <div class="callout">
+          If you use the included <code>RunShiny.R</code> launcher, run it from the repository root. Avoid hard-coded personal paths.
+        </div>
+      </section>
+
+      <section id="input-data">
+        <h2>4. Input Data Format</h2>
+        <p>CAR-NET expects matched ncRNA and coding gene expression files.</p>
+        <ul>
+          <li><strong>ncRNA expression CSV:</strong> rows are ncRNAs, columns are matched samples or cells.</li>
+          <li><strong>Gene expression CSV:</strong> rows are coding genes, columns are the same matched samples or cells.</li>
+          <li><strong>Optional clinical or condition CSV:</strong> use this for condition-specific or differential regulation analysis.</li>
+        </ul>
+        <div class="callout warning">
+          Sample or cell IDs should match across ncRNA, gene, and clinical files. Check column names before uploading.
+        </div>
+        <p>
+          CAR-NET currently expects continuous expression values. Raw count data should be normalized and transformed first, for example TPM, FPKM, or RPKM followed by log2 transformation, or another variance-stabilizing transformation.
+        </p>
+        <p>
+          For lncRNA names, the app supports LNCipedia, ENSG, HSALN, and HGNC input formats. For coding genes, the app supports HGNC symbol and ENSG ID input formats. For ncRNA type, choose miRNA, lncRNA, other, or mixed.
+        </p>
+      </section>
+
+      <section id="preprocessing">
+        <h2>5. Data Uploading And Preprocessing Tab</h2>
+        <p>Use this tab to choose input data and apply feature filtering.</p>
+        <ol>
+          <li>Use <strong>Choose data source</strong> to select <strong>TCGA_KIRP example</strong> or <strong>Upload my own data</strong>.</li>
+          <li><strong>TCGA_KIRP example</strong> lets users test the CAR-NET workflow with included example ncRNA and gene expression data. The ncRNA and gene preview tables auto-populate when this option is selected.</li>
+          <li><strong>Upload my own data</strong> lets users analyze custom CSV files. Custom mode requires matched ncRNA and gene expression files, with optional clinical data.</li>
+          <li>Select the ncRNA type: miRNA, lncRNA, other, or mixed.</li>
+          <li>If using lncRNA data, select the lncRNA naming format: LNCipedia, ENSG, HSALN, or HGNC.</li>
+          <li>Select the ncRNA data platform: bulk RNA-seq / microarray or scRNA-seq.</li>
+          <li>For bulk RNA-seq or microarray data, set mean and variance filtering. A looser mean cutoff is recommended for ncRNAs than for coding genes because ncRNAs are often lower expressed.</li>
+          <li>For scRNA-seq data, set zero-count filtering, mean filtering, and variance filtering.</li>
+          <li>Indicate whether the ncRNA data are already log2-transformed.</li>
+          <li>Select the gene naming format: HGNC symbol or ENSG ID.</li>
+          <li>Select the gene expression platform and apply analogous filtering options.</li>
+          <li>Indicate whether the gene expression data are already log2-transformed.</li>
+          <li>In custom mode, upload clinical data only when needed for condition-specific or differential analysis.</li>
+        </ol>
+        <p>Selected tables are previewed in the main panel for ncRNA expression, gene expression, and clinical data.</p>
+      </section>
+
+      <section id="analysis">
+        <h2>6. Analysis Tab: Running CAR-NET</h2>
+        <ol>
+          <li>Choose how to tune alpha: auto-tune or manual alpha.</li>
+          <li>Select external prior databases when relevant: miRCancer, miRTarBase, EVLncRNA, LncRNA2Target, and LncTarD.</li>
+          <li>Click <strong>Run CAR-NET</strong>.</li>
+        </ol>
+        <p>
+          In plain language, curated databases help prioritize disease-related ncRNAs and experimentally validated ncRNA-gene interactions during network search. Expected outputs include the inferred ncRNA-gene regulatory network, node and edge summaries, and network plots or tables.
+        </p>
+      </section>
+
+      <section id="differential">
+        <h2>7. Differential Regulation</h2>
+        <ol>
+          <li>Enable <strong>Want to look into differential regulation?</strong></li>
+          <li>Enter the condition variable name from the clinical data.</li>
+          <li>Enter the reference level. When possible, use the larger or more stable group as the reference.</li>
+          <li>Run CAR-NET to construct the initial reference network.</li>
+          <li>In <strong>Part C: Differential Regulation</strong>, enter the comparison level.</li>
+          <li>Click <strong>Update the network</strong>.</li>
+        </ol>
+        <p>CAR-NET compares the reference network with the updated condition-specific network to identify gained, lost, or changed regulatory edges.</p>
+      </section>
+
+      <section id="modules">
+        <h2>8. Module Detection</h2>
+        <ol>
+          <li>Choose the minimum module size.</li>
+          <li>Click <strong>Detect module</strong>.</li>
+          <li>Select a module to display.</li>
+        </ol>
+        <p>Modules represent subnetworks or communities of ncRNAs and genes that may act together. Larger or biologically coherent modules can help prioritize follow-up analysis.</p>
+      </section>
+
+      <section id="pathway">
+        <h2>9. Pathway Analysis</h2>
+        <p>CAR-NET can run pathway analysis for all genes in the network or for genes in a selected module.</p>
+        <ul>
+          <li>GO</li>
+          <li>KEGG</li>
+          <li>Reactome</li>
+          <li>Biocarta</li>
+        </ul>
+        <p>Select one or more pathway resources, then run pathway analysis for all network genes or for selected module genes. Outputs include enriched pathways, plots, and tables.</p>
+      </section>
+
+      <section id="examples">
+        <h2>10. Example Workflows From The Manuscript</h2>
+        <p>These examples provide concise settings inspired by manuscript case studies. They are not complete data-processing protocols.</p>
+        <div class="workflow">
+          <div class="workflow-card">
+            <h3>A. Bulk lncRNA Brain Development</h3>
+            <ul>
+              <li>ncRNA type: lncRNA</li>
+              <li>Platform: bulk RNA-seq / microarray</li>
+              <li>Expression scale: FPKM, log2 or other continuous scale</li>
+              <li>Example filtering: lncRNA mean FPKM &gt;= 1, gene mean FPKM &gt;= 10</li>
+              <li>Prior databases: EVLncRNA, LncRNA2Target, LncTarD</li>
+            </ul>
+          </div>
+          <div class="workflow-card">
+            <h3>B. TCGA KIRP miRNA Early Vs Late</h3>
+            <ul>
+              <li>ncRNA type: miRNA</li>
+              <li>Platform: bulk RNA-seq / microarray</li>
+              <li>Expression scale: RPM, log2 transformed</li>
+              <li>Example filtering: miRNA mean RPM &gt;= 0.3, gene mean RPM &gt;= 5</li>
+              <li>Condition: early vs late stage</li>
+              <li>Prior databases: miRCancer, miRTarBase</li>
+            </ul>
+          </div>
+          <div class="workflow-card">
+            <h3>C. Smart-seq-total Mixed Single-cell</h3>
+            <ul>
+              <li>ncRNA type: mixed</li>
+              <li>Platform: scRNA-seq</li>
+              <li>Filtering: mean CPM and zero-count filtering</li>
+              <li>Prior databases: optional or none if no relevant cell-line-specific prior is available</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="interpretation">
+        <h2>11. Interpreting Results</h2>
+        <p>
+          ncRNA -&gt; gene edges are the primary regulatory backbone of the CAR-NET output. Gene-gene edges represent direct gene-gene communications in the semi-bipartite graph.
+        </p>
+        <p>
+          If edge width or probability is shown, interpret it as evidence or posterior support from the model. Larger modules and enriched pathways can help prioritize biological interpretation and follow-up experiments.
+        </p>
+        <div class="callout warning">
+          CAR-NET is hypothesis-generating. Network findings should be validated experimentally where appropriate.
+        </div>
+      </section>
+
+      <section id="troubleshooting">
+        <h2>12. Troubleshooting</h2>
+        <ul>
+          <li><strong>App cannot find CSS or images:</strong> verify that static assets are in the <code>www/</code> directory or that resource paths are configured correctly.</li>
+          <li><strong>Package installation errors:</strong> install <code>BiocManager</code> first, then Bioconductor packages, then CRAN packages.</li>
+          <li><strong>Uploaded file is not shown correctly:</strong> check the CSV delimiter, row names, and headers.</li>
+          <li><strong>Sample or cell names do not match:</strong> make column names consistent across ncRNA, gene, and clinical data.</li>
+          <li><strong>Raw counts used directly:</strong> normalize and transform to continuous values first.</li>
+          <li><strong>Large files fail:</strong> <code>server.R</code> sets <code>shiny.maxRequestSize</code> to 100 MB.</li>
+          <li><strong>Analysis runs slowly:</strong> use filtering to reduce the number of features. Consider manual alpha only if you understand the parameter.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    CAR-NET R Shiny Tutorial. For source code, visit the CAR-NET GitHub repository.
+  </footer>
+</body>
+</html>

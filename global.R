@@ -34,6 +34,9 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 # library(preproc)
 library(shiny)
+if (dir.exists("tutorial")) {
+  addResourcePath("tutorial", normalizePath("tutorial", mustWork = TRUE))
+}
 library(shinyBS)
 library(shinyjs)
 library(Rcpp)
@@ -111,7 +114,7 @@ for (f in list.files(path=dir)) {
 
 # Include all UI modules
 dir <- "ui"
-for (f in list.files(path=dir)) {
+for (f in setdiff(list.files(path=dir), "ui.R")) {
   source(paste(dir, f, sep="/"))
 }
 
@@ -121,4 +124,3 @@ tryCatch({
 }, error=function(error){
   DB.set.working.dir(db, paste(getwd(), "data", sep="/"))
 })
-

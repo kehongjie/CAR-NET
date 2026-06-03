@@ -8,12 +8,46 @@ preproc_ui <- function(id, label= "preprocessing data") {
         # Upload Data
         ##########################
         h2("Upload Data"),
-        p("Note: It is assumed that the uploaded data will have RNA/genes on the rows, and samples on the columns."),
+        selectInput(
+          ns("data_source"),
+          label = "Choose data source",
+          choices = list(
+            "TCGA_KIRP example" = "tcga_kirp",
+            "Upload my own data" = "custom"
+          ),
+          selected = "tcga_kirp"
+        ),
+        conditionalPanel(
+          condition = "input['preproc-data_source'] == 'tcga_kirp'",
+          tags$div(
+            class = "alert alert-info",
+            strong("Using TCGA_KIRP example data. "),
+            "This small example lets you test the CAR-NET workflow before uploading your own matched ncRNA, gene, and clinical files."
+          )
+        ),
+        conditionalPanel(
+          condition = "input['preproc-data_source'] == 'custom'",
+          tags$div(
+            class = "alert alert-info",
+            strong("Upload matched CSV files. "),
+            "Expression CSVs should have ncRNAs or genes in rows and samples/cells in columns. ",
+            "Sample/cell IDs should match across ncRNA, gene, and clinical files.",
+            tags$br(),
+            "ncRNA expression CSV: rows = ncRNAs, columns = samples/cells.",
+            tags$br(),
+            "Gene expression CSV: rows = genes, columns = the same samples/cells.",
+            tags$br(),
+            "Clinical CSV: optional, used for condition or differential regulation."
+          )
+        ),
 # ncRNA --------
         h3("NcRNA Expression Data"),
-        fileInput(ns("ncRNA_file"), 'Upload ncRNA expression data file (.csv)',
-                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
-                           '.csv')
+        conditionalPanel(
+          condition = "input['preproc-data_source'] == 'custom'",
+          fileInput(ns("ncRNA_file"), 'Upload ncRNA expression data file (.csv)',
+                    accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                             '.csv')
+          )
         ),
         p("All lncRNA names/IDs will be converted to LNCipedia format."),
         radioButtons(ns("RNA_type"), label = "Select the type of ncRNA data.",
@@ -21,7 +55,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                                     "lncRNA" = 2,
                                     "other" = 3,
                                     "mixed" = 4),
-                     selected = 1),
+                     selected = 2),
         conditionalPanel(
           condition = "input['preproc-RNA_type'] == 2",
           radioButtons(ns("ncRNA_name"), label = "Select the naming format of your lncRNA data.",
@@ -29,7 +63,7 @@ preproc_ui <- function(id, label= "preprocessing data") {
                                       "ENSG" = 1, 
                                       "HSALN" = 2,
                                       "HGNC" = 3),
-                       selected = 0),
+                       selected = 1),
         ),
 #Filtering ncRNA----------------------------------------------------------------
         
@@ -90,9 +124,12 @@ preproc_ui <- function(id, label= "preprocessing data") {
 #Filtering gene expression------------------------------------------------------
         h3("Gene Expression Data"),
         p("All gene names/IDs will be converted to the HGNC approved symbol."),
-        fileInput(ns("gene_file"), 'Upload gene expression data file (.csv)',
-                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
-                           '.csv')
+        conditionalPanel(
+          condition = "input['preproc-data_source'] == 'custom'",
+          fileInput(ns("gene_file"), 'Upload gene expression data file (.csv)',
+                    accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                             '.csv')
+          )
         ),
         radioButtons(ns("name_gene"), label = "Select the naming format of your gene data.",
                      choices = list("HGNC Symbol" = 0, 
@@ -153,10 +190,13 @@ preproc_ui <- function(id, label= "preprocessing data") {
 
 
 # Clinical Data--------
-        h3("Clinical Data (Optional)"),
-        fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
-                  accept=c('text/csv', 'text/comma-separated-values,text/plain', 
-                           '.csv')
+        conditionalPanel(
+          condition = "input['preproc-data_source'] == 'custom'",
+          h3("Clinical Data (Optional)"),
+          fileInput(ns("clinical_file"), 'Upload clinical data file (.csv)',
+                    accept=c('text/csv', 'text/comma-separated-values,text/plain', 
+                             '.csv')
+          )
         ),
       ),
 

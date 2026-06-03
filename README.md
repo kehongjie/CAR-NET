@@ -1,5 +1,5 @@
 # CAR-NET
-CAR-NET is a RShiny-based application with graphical user interface (GUI) for inferring non-coding RNA regulatory network from transcriptomic data and curated database. This application took input of both ncRNA and gene expression data generated from either bulk or single-cell RNA-seq and incorporated a list of downloaded curated databases for users to choose based on the type of ncRNA and the condition/disease of interest. It includes a preparatory step to preprocess the expression data following the standard pipeline and major analytical steps to construct the ncRNA regulatory network, identify the differential network, detect network modules, and perform pathway analysis to facilitate the biological interpretation of the network findings. In addition, it provides visualization of the network/modules and downloadable graphical and tabular outputs. 
+CAR-NET is an R Shiny-based application with graphical user interface (GUI) for inferring non-coding RNA regulatory networks from transcriptomic data and curated databases. This application takes both ncRNA and gene expression data generated from either bulk or single-cell RNA-seq and incorporates curated databases for users to choose based on the type of ncRNA and the condition/disease of interest. It includes a preparatory step to preprocess the expression data following the standard pipeline and major analytical steps to construct the ncRNA regulatory network, identify the differential network, detect network modules, and perform pathway analysis to facilitate the biological interpretation of the network findings. In addition, it provides visualization of the network/modules and downloadable graphical and tabular outputs.
 
 ![Alt text](./flowchart.png)
 
@@ -15,14 +15,20 @@ CAR-NET is a RShiny-based application with graphical user interface (GUI) for in
 2. Unzip and extract to a local folder named "CAR-NET-main".
 
 ## Start the Shiny software
-1. Open "RunShiny.R" file from the "CAR-NET-main" folder in R console.
-2. Set the working directory of R to the directory which contains the Shiny project folder "CAR-NET-main" `setwd("path\_to\_Rshiny/")`.
-3. Run the code `shiny::runApp('CAR-NET-main', port=9987, launch.browser=T)` and the CAR-NET Shiny app will automatically open in your default browser.
+1. Open an R console from the CAR-NET repository root.
+2. Run `shiny::runApp(".", port = 9987, launch.browser = TRUE)` and the CAR-NET Shiny app will automatically open in your default browser.
+3. Alternatively, run the included `RunShiny.R` launcher from the repository root.
+
+The Data Uploading and Preprocessing tab includes a TCGA_KIRP example that can be selected from the data-source dropdown.
 
 ## Dependency packages 
-Before running CAR-NET, please make sure all dependency packages are installed. The following code for installing dependency pakcages can be used:
+Before running CAR-NET, please make sure all dependency packages are installed. The following code for installing dependency packages can be used:
 ```R
 ## from Bioconductor (run this first)
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+
 Bioconductor.packages <- function(pkg){
     new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
     if (length(new.pkg)) 
@@ -35,12 +41,9 @@ CRAN.packages <- function(pkg){
     if (length(new.pkg)) 
         install.packages(new.pkg, dependencies = TRUE)
 }
-CRAN.packages(c("devtools", "igraph", "BiDAG", ", "ggplot2", "CCA", "CCP", "pheatmap", "MASS", "rainbow"))
+CRAN.packages(c("devtools", "igraph", "BiDAG", "ggplot2", "CCA", "CCP", "pheatmap", "MASS", "rainbow"))
 
 ```
 
 ## Where to find the full tutorial 
-Please refer to the full tutorial [here](https://github.com/kehongjie/CAR-NET/blob/main/tutorial/CAR-NET_tutorial.pdf) for details.
-
-
-
+Please refer to the [CAR-NET R Shiny Tutorial](tutorial/CAR-NET_tutorial.html) for the polished webpage version. The Markdown source is also available at [tutorial/CAR-NET_tutorial.md](tutorial/CAR-NET_tutorial.md).
